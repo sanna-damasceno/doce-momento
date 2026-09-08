@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: doce-momento-app
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - DATABASE_URL=file:./dev.db
+      - JWT_SECRET=doce-momento-secret-key
+    command: >
+      sh -c "npx prisma migrate dev --name init && npm run dev"
