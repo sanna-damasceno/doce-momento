@@ -1,3 +1,7 @@
+# ============================================
+# DOCE MOMENTO - Docker Compose
+# ============================================
+
 version: '3.8'
 
 services:
@@ -11,7 +15,7 @@ services:
       - /app/node_modules
       - /app/.next
     environment:
-      - DATABASE_URL=file:./dev.db
-      - JWT_SECRET=doce-momento-secret-key
-    command: >
-      sh -c "npx prisma migrate dev --name init && npm run dev"
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+    restart: unless-stopped
+    command: yarn dev

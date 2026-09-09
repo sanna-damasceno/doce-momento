@@ -1,0 +1,42 @@
+# Dependências
+node_modules
+.next
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Ambiente
+.env
+.env.local
+.env.development.local
+
+# Banco de dados
+*.db
+*.db-journal
+
+# Logs e cache
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp.*
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode
+.idea
+
+# Documentação
+README.md
+docs
+
+# Uploads
+public/uploads
