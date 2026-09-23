@@ -1,21 +1,27 @@
-# ============================================
-# DOCE MOMENTO - Docker Compose
-# ============================================
-
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: docemomento_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: docemomento
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   app:
     build: .
     container_name: doce-momento-app
     ports:
       - "3000:3000"
-    volumes:
-      - .:/app
-      - /app/node_modules
-      - /app/.next
     environment:
-      - NODE_ENV=development
-      - WATCHPACK_POLLING=true
-    restart: unless-stopped
-    command: yarn dev
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/docemomento?schema=public
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
