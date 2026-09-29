@@ -65,16 +65,28 @@ export async function POST(request: Request) {
       await query(itemQuery, itemValues);
     }
 
-// 3. Integrar com o Mercado Pago para gerar a Preferência de Pagamento
+    // 3. Integrar com o Mercado Pago para gerar a Preferência de Pagamento
     const preference = new Preference(client);
+
+    // 3.1 Mapeia os produtos do carrinho para o formato do Mercado Pago
+    const mpItems = items.map((item: any) => ({
+      title: item.product_name,
+      quantity: Number(item.quantity),
+      unit_price: Number(item.unit_price),
+    }));
+
+    // 3.2 ADICIONADO: Insere a taxa de entrega como um item para o Mercado Pago cobrar junto
+    if (Number(shipping_fee) > 0) {
+      mpItems.push({
+        title: 'Taxa de Entrega',
+        quantity: 1,
+        unit_price: Number(shipping_fee),
+      });
+    }
 
     const preferenceResponse = await preference.create({
             body: {
-                items: items.map((item: any) => ({
-                title: item.product_name,
-                quantity: Number(item.quantity),
-                unit_price: Number(item.unit_price),
-                })),
+                items: mpItems, // Agora contém os produtos + a taxa de entrega
                 external_reference: String(orderId),
             }
     });

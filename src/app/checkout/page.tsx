@@ -78,7 +78,7 @@ export default function CheckoutPage() {
   // Cálculos dinâmicos
   const subtotal = itens.reduce((acc, item) => acc + (Number(item.preco) * item.quantidade), 0);
   const custoEmbalagemPresente = itens.filter(i => i.embalagem?.includes('Presente')).length * 5.00;
-  const shippingFee = 10.00;
+  const shippingFee = 0.01;
   const discount = 0.00; 
   const totalAmount = subtotal + custoEmbalagemPresente + shippingFee - discount;
   const totalItensCount = itens.reduce((acc, item) => acc + item.quantidade, 0);

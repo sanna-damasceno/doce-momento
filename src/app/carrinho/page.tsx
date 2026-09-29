@@ -98,7 +98,7 @@ export default function CarrinhoPage() {
   const subtotalItens = itens.reduce((acc, item) => acc + (Number(item.preco) * item.quantidade), 0);
   const custoEmbalagemPresente = itens.filter(i => i.embalagem?.includes('Presente')).length * 5.00;
   const valorDesconto = (subtotalItens + custoEmbalagemPresente) * descontoAplicado;
-  const taxaEntrega = 10.00;
+  const taxaEntrega = 0.01;
   const totalGeral = (subtotalItens + custoEmbalagemPresente - valorDesconto) + taxaEntrega;
   const totalItensCount = itens.reduce((acc, item) => acc + item.quantidade, 0);
 

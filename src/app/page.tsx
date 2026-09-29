@@ -171,6 +171,14 @@ export default function Home() {
             <Link href="/carrinho" className="bg-[#C94A67] text-white px-4 py-2 rounded-full text-xs font-medium hover:bg-[#b03d57]">
               🛒 Carrinho
             </Link>
+            
+          )}
+
+          {isLoggedIn && (
+            <Link href="/pedidos" className="bg-[#C94A67] text-white px-4 py-2 rounded-full text-xs font-medium hover:bg-[#b03d57]">
+              Pedidos
+            </Link>
+            
           )}
 
           {isLoggedIn ? (
