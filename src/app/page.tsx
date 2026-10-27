@@ -367,6 +367,19 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Botão Flutuante Direto para o WhatsApp da Empresa (RF12)[cite: 21] */}
+      <div className="fixed bottom-6 right-6 z-50">
+        <a 
+          href={`https://wa.me/5592993406975?text=${encodeURIComponent("Olá! Gostaria de saber mais sobre os produtos da Doce Momento.")}`}
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 bg-green-600 text-white px-5 py-3 rounded-full shadow-lg font-medium text-sm hover:bg-green-700 transition transform hover:scale-105"
+        >
+          <span className="text-lg">💬</span>
+          <span>Fale Conosco</span>
+        </a>
+      </div>
+
       {/* Rodapé */}
       <footer className="bg-[#3D2C1E] text-white py-8 text-center text-xs mt-12">
         <p>© 2026 Doce Momento. Todos os direitos reservados.</p>
