@@ -14,9 +14,23 @@ export async function POST(request: Request) {
 
     console.log('Webhook recebido:', JSON.stringify(body));
 
-    const paymentId = body.data?.id || body.id || url.searchParams.get('data.id');
-    const eventType = body.type || url.searchParams.get('type');
+    const eventType =
+      body.type ||
+      body.topic ||
+      url.searchParams.get('type') ||
+      url.searchParams.get('topic');
 
+    const paymentId =
+      body.data?.id ||
+      (eventType === 'payment' ? body.resource : null) ||
+      body.id ||
+      url.searchParams.get('data.id') ||
+      url.searchParams.get('id');
+
+    console.log('Evento identificado:', {
+      eventType,
+      paymentId,
+    });
     if (eventType !== 'payment' || !paymentId) {
       console.log('Notificação ignorada:', { eventType, paymentId });
       return NextResponse.json({ received: true });
@@ -82,19 +96,37 @@ export async function POST(request: Request) {
        SET payment_status = $1,
            status = $2,
            updated_at = NOW()
-       WHERE id = $3`,
+       WHERE id = $3
+          AND payment_status IS DISTINCT FROM $1
+          RETURNING id`,
       ['aprovado', 'Pago / Em Preparo', externalReference]
     );
 
     if (updateResult.rowCount === 0) {
-      throw new Error(
-        `Nenhum pedido encontrado com ID ${externalReference}`
+      const orderCheck = await query(
+        `SELECT id, payment_status
+        FROM orders
+        WHERE id = $1`,
+        [externalReference]
       );
+
+      if (orderCheck.rows.length === 0) {
+        throw new Error(
+          `Nenhum pedido encontrado com ID ${externalReference}`
+        );  
     }
 
     console.log(
-  `Pedido ${externalReference} atualizado para Pago`
-  );
+      `Pedido ${externalReference} já estava aprovado. Nenhuma atualização necessária`
+    );
+
+      return NextResponse.json({
+      received: true,
+      alreadyApproved: true,
+    });
+  }
+  
+  console.log(`Pedido ${externalReference} atualizado para Pago`);
 
   // Buscar os dados do pedido para enviar o e-mail
   const orderResult = await query(
