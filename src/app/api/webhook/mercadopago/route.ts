@@ -28,10 +28,32 @@ export async function POST(request: Request) {
 
     const paymentClient = new Payment(client);
 
-    // Consulta o status real do pagamento
-    const paymentInfo = await paymentClient.get({
-      id: String(paymentId),
-    });
+    let paymentInfo;
+
+    try {
+      paymentInfo = await paymentClient.get({
+        id: String(paymentId),
+      });
+    } catch (error: any) {
+      console.error('Erro ao consultar pagamento:', {
+        paymentId,
+        status: error?.status,
+        message: error?.message,
+      });
+
+      // O ID 123456 da simulação pode não existir na API.
+      // Não aprovar nem atualizar nenhum pedido nesse caso.
+      if (String(paymentId) === '123456' && error?.status === 404) {
+        console.log('Simulação recebida: ID fictício, nenhuma atualização realizada.');
+
+        return NextResponse.json({
+          received: true,
+          simulation: true,
+        });
+      }
+
+      throw error;
+    }
 
     console.log('Pagamento consultado:', {
       id: paymentInfo.id,
