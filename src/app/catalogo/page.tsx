@@ -1,19 +1,33 @@
 import Link from 'next/link';
-import { Pool } from 'pg';
+import { Pool, type PoolClient } from 'pg';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
 async function getProdutos() {
+  let client: PoolClient | undefined;
   try {
     const client = await pool.connect();
-    const result = await client.query('SELECT * FROM produtos ORDER BY id ASC');
-    client.release();
+    const result = await client.query(`SELECT
+        id,
+        nome,
+        slug,
+        categoria,
+        preco,
+        preco_promocional,
+        imagem,
+        descricao_curta,
+        destaque
+      FROM produtos
+      ORDER BY id ASC`);
+
     return result.rows;
   } catch (error) {
     console.error('Erro ao buscar produtos:', error);
     return [];
+  } finally {
+    client?.release();
   }
 }
 
@@ -88,9 +102,27 @@ export default async function CatalogoPage() {
                             </h3>
                         </Link>
                       <p className="text-[11px] text-gray-500 mt-1 line-clamp-2">{prod.descricao_curta}</p>
-                      <div className="mt-3">
-                        <span className="text-sm font-bold text-[#D9537A]">R$ {Number(prod.preco).toFixed(2)}</span>
-                      </div>
+                      
+                    <div className="mt-3">
+                      {prod.preco_promocional !== null &&
+                      prod.preco_promocional !== undefined &&
+                      Number(prod.preco_promocional) < Number(prod.preco) ? (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs text-gray-400 line-through">
+                            R$ {Number(prod.preco).toFixed(2)}
+                          </span>
+
+                          <span className="text-sm font-bold text-[#D9537A]">
+                            R$ {Number(prod.preco_promocional).toFixed(2)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm font-bold text-[#D9537A]">
+                          R$ {Number(prod.preco).toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+
                     </div>
                   </div>
                   <div className="p-4 pt-0">
