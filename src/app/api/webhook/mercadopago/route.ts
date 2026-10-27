@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import nodemailer from 'nodemailer';
 
@@ -21,11 +22,12 @@ export async function POST(request: Request) {
       url.searchParams.get('topic');
 
     const paymentId =
-      body.data?.id ||
-      (eventType === 'payment' ? body.resource : null) ||
-      body.id ||
-      url.searchParams.get('data.id') ||
-      url.searchParams.get('id');
+      body.data?.id ??
+      (eventType === 'payment' ? body.resource : null) ??
+      url.searchParams.get('data.id') ??
+      (url.searchParams.get('topic') === 'payment'
+        ? url.searchParams.get('id')
+        : null);
 
     console.log('Evento identificado:', {
       eventType,
@@ -125,26 +127,48 @@ export async function POST(request: Request) {
       alreadyApproved: true,
     });
   }
-  
+
   console.log(`Pedido ${externalReference} atualizado para Pago`);
 
   // Buscar os dados do pedido para enviar o e-mail
   const orderResult = await query(
-    `SELECT customer_email, total_amount
-    FROM orders
-    WHERE id = $1`,
+    `SELECT
+         id,
+         customer_name,
+         customer_email,
+         shipping_address,
+         delivery_date,
+         subtotal,
+         shipping_fee,
+         discount,
+         total_amount,
+         status,
+         payment_status,
+         payment_type,
+         notes,
+         created_at
+       FROM orders
+       WHERE id = $1`,
     [externalReference]
   );
 
-  if (orderResult.rows.length > 0) {
-    const order = orderResult.rows[0];
+  if (orderResult.rows.length === 0) {
+      throw new Error(`Pedido ${externalReference} não encontrado`);
+    }
+
+  // Buscar os produtos do pedido
+    const itemsResult = await query(
+      `SELECT product_name, quantity, unit_price, customization
+       FROM order_items
+       WHERE order_id = $1
+       ORDER BY id`,
+      [externalReference]
+    );
 
     await sendConfirmationEmail(
-      order.customer_email,
-      String(externalReference),
-      Number(order.total_amount)
+      orderResult.rows[0],
+      itemsResult.rows
     );
-  }
 
   return NextResponse.json({ received: true });
   } catch (error) {
@@ -159,8 +183,100 @@ export async function POST(request: Request) {
 }
 
 
-async function sendConfirmationEmail(toEmail: string, orderId: string, total: number) {
+
+async function sendConfirmationEmail(order: any, items: any[]) {
+  const formatMoney = (value: number | string) =>
+    Number(value).toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    });
+
+  const formatDate = (value: string | Date) =>
+    new Date(value).toLocaleDateString('pt-BR', {
+      timeZone: 'UTC',
+    });
+
   try {
+    // Gerar o PDF
+    const pdfDoc = await PDFDocument.create();
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    let page = pdfDoc.addPage([595.28, 841.89]);
+    let y = 790;
+
+    const drawLine = (text: string, bold = false, size = 11) => {
+      // Criar outra página quando necessário
+      if (y < 65) {
+        page = pdfDoc.addPage([595.28, 841.89]);
+        y = 790;
+      }
+
+      page.drawText(text, {
+        x: 45,
+        y,
+        size,
+        font: bold ? boldFont : font,
+        color: rgb(0.2, 0.2, 0.2),
+        maxWidth: 500,
+      });
+
+      y -= size + 10;
+    };
+
+    drawLine('DOCE MOMENTO', true, 22);
+    drawLine('COMPROVANTE DE PEDIDO PAGO', true, 14);
+    y -= 10;
+
+    drawLine(`Pedido: #${order.id}`, true);
+    drawLine(`Data do pedido: ${formatDate(order.created_at)}`);
+    drawLine(`Entrega prevista: ${formatDate(order.delivery_date)}`);
+    drawLine(`Cliente: ${order.customer_name}`);
+    drawLine(`E-mail: ${order.customer_email}`);
+    drawLine(`Endereco: ${order.shipping_address}`);
+    y -= 10;
+
+    drawLine('ITENS DO PEDIDO', true, 13);
+
+    for (const item of items) {
+      const quantity = Number(item.quantity);
+      const unitPrice = Number(item.unit_price);
+      const itemTotal = quantity * unitPrice;
+
+      drawLine(`${quantity}x ${item.product_name}`, true);
+      drawLine(
+        `Valor unitario: ${formatMoney(unitPrice)} | Total: ${formatMoney(itemTotal)}`
+      );
+
+      if (item.customization) {
+        drawLine(`Personalizacao: ${item.customization}`);
+      }
+
+      y -= 5;
+    }
+
+    y -= 10;
+    drawLine(`Subtotal: ${formatMoney(order.subtotal)}`);
+    drawLine(`Entrega: ${formatMoney(order.shipping_fee)}`);
+    drawLine(`Desconto: ${formatMoney(order.discount ?? 0)}`);
+    drawLine(`TOTAL: ${formatMoney(order.total_amount)}`, true, 15);
+    y -= 10;
+
+    drawLine(`Forma de pagamento: ${order.payment_type || 'Nao informado'}`);
+    drawLine('Situacao do pagamento: APROVADO', true);
+    drawLine(`Situacao do pedido: ${order.status}`);
+
+    if (order.notes) {
+      y -= 5;
+      drawLine(`Observacoes: ${order.notes}`);
+    }
+
+    y -= 15;
+    drawLine('Este comprovante nao substitui uma nota fiscal.');
+
+    const pdfBytes = await pdfDoc.save();
+
+    // Configurar o envio do e-mail
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST || 'smtp.gmail.com',
       port: Number(process.env.EMAIL_PORT) || 587,
@@ -173,21 +289,42 @@ async function sendConfirmationEmail(toEmail: string, orderId: string, total: nu
 
     await transporter.sendMail({
       from: `"Doce Momento" <${process.env.EMAIL_USER}>`,
-      to: toEmail,
-      subject: `Confirmação do Pedido #${orderId} - Doce Momento`,
+      to: order.customer_email,
+      subject: `Confirmacao do Pedido #${order.id} - Doce Momento`,
+      text: [
+        `Ola, ${order.customer_name}!`,
+        '',
+        `O pagamento do pedido #${order.id} foi aprovado.`,
+        `Valor total: ${formatMoney(order.total_amount)}`,
+        'O comprovante esta anexado em PDF.',
+        '',
+        'Com carinho,',
+        'Equipe Doce Momento',
+      ].join('\n'),
       html: `
-        <div style="font-family: Arial, sans-serif; color: #333; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;">
+        <div style="font-family: Arial, sans-serif; color: #333; padding: 24px; max-width: 600px;">
           <h2 style="color: #a8325b;">Obrigado pela sua compra! 🎉</h2>
-          <p>O pagamento do seu pedido <strong>#${orderId}</strong> foi aprovado com sucesso.</p>
-          <p><strong>Valor Total:</strong> R$ ${Number(total).toFixed(2)}</p>
-          <p>Acesse a sua área de pedidos no site da <strong>Doce Momento</strong> para acompanhar o preparo e a entrega.</p>
-          <br/>
-          <p style="font-size: 12px; color: #666;">Com carinho,<br/><strong>Equipe Doce Momento</strong></p>
+          <p>Olá, ${order.customer_name}!</p>
+          <p>O pagamento do pedido <strong>#${order.id}</strong> foi aprovado.</p>
+          <p><strong>Data:</strong> ${formatDate(order.created_at)}</p>
+          <p><strong>Valor total:</strong> ${formatMoney(order.total_amount)}</p>
+          <p><strong>Pagamento:</strong> Aprovado</p>
+          <p><strong>Situação do pedido:</strong> ${order.status}</p>
+          <p>O comprovante com os detalhes da compra está anexado a este e-mail em PDF.</p>
+          <p>Com carinho,<br><strong>Equipe Doce Momento</strong></p>
         </div>
       `,
+      attachments: [
+        {
+          filename: `comprovante-pedido-${order.id}.pdf`,
+          content: Buffer.from(pdfBytes),
+          contentType: 'application/pdf',
+        },
+      ],
     });
-    console.log(`E-mail enviado para ${toEmail}`);
+
+    console.log(`E-mail com PDF enviado para ${order.customer_email}`);
   } catch (emailError) {
-    console.error('Erro ao enviar e-mail:', emailError);
+    console.error('Erro ao gerar PDF ou enviar e-mail:', emailError);
   }
 }
