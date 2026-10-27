@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Pool, type PoolClient } from 'pg';
+import FiltroCatalogo from './FiltroCatalogo';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -60,84 +61,8 @@ export default async function CatalogoPage() {
           <h1 className="text-3xl font-serif font-bold text-[#3D2314]">Catálogo de Doces</h1>
           <p className="text-xs text-gray-500 mt-1">Escolha seus doces favoritos e faça sua encomenda artesanal.</p>
         </div>
+        <FiltroCatalogo produtos={produtos} />
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {/* Barra lateral de Filtros (Estático / Exemplo visual) */}
-          <aside className="bg-white p-5 rounded-xl border border-[#EFE7DE] h-fit shadow-sm md:col-span-1">
-            <h3 className="font-semibold text-sm mb-3 text-[#3D2314]">Filtros</h3>
-            <div className="space-y-4 text-xs">
-              <div>
-                <h4 className="font-medium text-gray-700 mb-2">CATEGORIAS</h4>
-                <ul className="space-y-1.5 text-gray-600">
-                  <li className="font-semibold text-[#D9537A] cursor-pointer">• Todos os Produtos</li>
-                  <li className="cursor-pointer hover:text-[#D9537A]">Brigadeiros</li>
-                  <li className="cursor-pointer hover:text-[#D9537A]">Bolos de Pote</li>
-                  <li className="cursor-pointer hover:text-[#D9537A]">Tortas</li>
-                  <li className="cursor-pointer hover:text-[#D9537A]">Cupcakes</li>
-                  <li className="cursor-pointer hover:text-[#D9537A]">Caixas Presente</li>
-                </ul>
-              </div>
-            </div>
-          </aside>
-
-          {/* Grelha de Produtos */}
-          <div className="md:col-span-3">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-xs text-gray-500">{produtos.length} produtos encontrados</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {produtos.map((prod) => (
-                <div key={prod.id} className="bg-white rounded-xl border border-[#EFE7DE] overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between">
-                  <div>
-                    {/* Imagem clicável */}
-                    <Link href={`/catalogo/${prod.slug}`} className="block h-48 bg-gray-100 overflow-hidden relative">
-                        <img src={prod.imagem} alt={prod.nome} className="w-full h-full object-cover hover:scale-105 transition duration-300" />
-                    </Link>
-                    <div className="p-4">
-                        {/* Título clicável */}
-                        <Link href={`/catalogo/${prod.slug}`}>
-                            <h3 className="font-serif font-bold text-sm text-[#3D2314] line-clamp-1 hover:text-[#D9537A] transition">
-                                {prod.nome}
-                            </h3>
-                        </Link>
-                      <p className="text-[11px] text-gray-500 mt-1 line-clamp-2">{prod.descricao_curta}</p>
-                      
-                    <div className="mt-3">
-                      {prod.preco_promocional !== null &&
-                      prod.preco_promocional !== undefined &&
-                      Number(prod.preco_promocional) < Number(prod.preco) ? (
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs text-gray-400 line-through">
-                            R$ {Number(prod.preco).toFixed(2)}
-                          </span>
-
-                          <span className="text-sm font-bold text-[#D9537A]">
-                            R$ {Number(prod.preco_promocional).toFixed(2)}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-sm font-bold text-[#D9537A]">
-                          R$ {Number(prod.preco).toFixed(2)}
-                        </span>
-                      )}
-                    </div>
-
-                    </div>
-                  </div>
-                  <div className="p-4 pt-0">
-                    <Link 
-                      href={`/catalogo/${prod.slug}`} 
-                      className="block w-full text-center bg-[#3D2314] hover:bg-[#2A180E] text-white text-xs py-2 rounded font-medium transition"
-                    >
-                      Adicionar ao Carrinho
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
       </main>
 
       {/* Rodapé */}
