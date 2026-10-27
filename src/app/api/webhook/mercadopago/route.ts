@@ -9,58 +9,101 @@ const client = new MercadoPagoConfig({
 
 export async function POST(request: Request) {
   try {
+    const url = new URL(request.url);
     const body = await request.json();
+
     console.log('Webhook recebido:', JSON.stringify(body));
 
-    const paymentId = body.data?.id || body.id;
+    const paymentId = body.data?.id || body.id || url.searchParams.get('data.id');
+    const eventType = body.type || url.searchParams.get('type');
 
-    if (paymentId) {
-      const paymentClient = new Payment(client);
-      
-      let paymentInfo;
-      try {
-        // Tenta buscar os dados do pagamento no Mercado Pago
-        paymentInfo = await paymentClient.get({ id: paymentId });
-      } catch (err) {
-        console.warn('Não foi possível buscar o pagamento via API do MP, tentando prosseguir...', err);
-      }
-
-      // Se o paymentInfo vier preenchido, pega o external_reference. 
-      // Caso contrário, podemos buscar o pedido correspondente de outra forma se necessário.
-      const externalReference = paymentInfo?.external_reference; 
-      const paymentStatus = paymentInfo?.status || 'approved'; // Se o webhook disparou, no ambiente de teste legacy costuma ser aprovado
-
-      if (externalReference) {
-        let dbPaymentStatus = 'aprovado';
-        let dbOrderStatus = 'Pago / Em Preparo';
-
-        // Atualiza a base de dados PostgreSQL
-        const updateQuery = `
-          UPDATE orders 
-          SET payment_status = $1, status = $2, updated_at = NOW() 
-          WHERE id = $3;
-        `;
-        await query(updateQuery, [dbPaymentStatus, dbOrderStatus, externalReference]);
-        console.log(`Pedido ${externalReference} atualizado com sucesso para Pago!`);
-
-        // Busca o email para enviar a confirmação
-        const checkOrderQuery = `SELECT customer_email, total_amount FROM orders WHERE id = $1;`;
-        const orderResult = await query(checkOrderQuery, [externalReference]);
-
-        if (orderResult.rows.length > 0) {
-          const order = orderResult.rows[0];
-          await sendConfirmationEmail(order.customer_email, externalReference, order.total_amount);
-        }
-      }
+    if (eventType !== 'payment' || !paymentId) {
+      console.log('Notificação ignorada:', { eventType, paymentId });
+      return NextResponse.json({ received: true });
     }
 
-    return NextResponse.json({ received: true }, { status: 200 });
+    if (!process.env.MP_ACCESS_TOKEN) {
+      throw new Error('MP_ACCESS_TOKEN não configurado');
+    }
 
-  } catch (error: any) {
-    console.error('Erro ao processar webhook:', error);
-    return NextResponse.json({ received: true }, { status: 200 }); // Retorna 200 para o MP não ficar repetindo
+    const paymentClient = new Payment(client);
+
+    // Consulta o status real do pagamento
+    const paymentInfo = await paymentClient.get({
+      id: String(paymentId),
+    });
+
+    console.log('Pagamento consultado:', {
+      id: paymentInfo.id,
+      status: paymentInfo.status,
+      external_reference: paymentInfo.external_reference,
+    });
+
+    // Não atualizar o pedido se não estiver aprovado
+    if (paymentInfo.status !== 'approved') {
+      return NextResponse.json({
+        received: true,
+        paymentStatus: paymentInfo.status,
+      });
+    }
+
+    const externalReference = paymentInfo.external_reference;
+
+    if (!externalReference) {
+      throw new Error(
+        'Pagamento sem external_reference para identificar o pedido'
+      );
+    }
+
+    const updateResult = await query(
+      `UPDATE orders
+       SET payment_status = $1,
+           status = $2,
+           updated_at = NOW()
+       WHERE id = $3`,
+      ['aprovado', 'Pago / Em Preparo', externalReference]
+    );
+
+    if (updateResult.rowCount === 0) {
+      throw new Error(
+        `Nenhum pedido encontrado com ID ${externalReference}`
+      );
+    }
+
+    console.log(
+  `Pedido ${externalReference} atualizado para Pago`
+  );
+
+  // Buscar os dados do pedido para enviar o e-mail
+  const orderResult = await query(
+    `SELECT customer_email, total_amount
+    FROM orders
+    WHERE id = $1`,
+    [externalReference]
+  );
+
+  if (orderResult.rows.length > 0) {
+    const order = orderResult.rows[0];
+
+    await sendConfirmationEmail(
+      order.customer_email,
+      String(externalReference),
+      Number(order.total_amount)
+    );
+  }
+
+  return NextResponse.json({ received: true });
+  } catch (error) {
+    console.error('Erro real no webhook:', error);
+
+    // Permite identificar falhas e possibilita novas tentativas
+    return NextResponse.json(
+      { received: false, error: 'Falha ao processar pagamento' },
+      { status: 500 }
+    );
   }
 }
+
 
 async function sendConfirmationEmail(toEmail: string, orderId: string, total: number) {
   try {

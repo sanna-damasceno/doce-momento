@@ -89,7 +89,7 @@ export async function POST(request: Request) {
             body: {
                 items: mpItems, // Agora contém os produtos + a taxa de entrega
                 external_reference: String(orderId),
-                notification_url:'https://doce-momento-lilac.vercel.app/api/webhook', 
+                notification_url:'https://doce-momento-lilac.vercel.app/api/webhook/mercadopago', 
             }
     });
 
