@@ -2,14 +2,17 @@ import Link from 'next/link';
 import { Pool, type PoolClient } from 'pg';
 import FiltroCatalogo from './FiltroCatalogo';
 
+export const dynamic = 'force-dynamic';
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });
 
 async function getProdutos() {
   let client: PoolClient | undefined;
+
   try {
-    const client = await pool.connect();
+    client = await pool.connect();
     const result = await client.query(`SELECT
         id,
         nome,
