@@ -91,60 +91,124 @@ export async function GET(request: Request) {
   }
 }
 
-// PATCH: Cancela um pedido (se o pagamento ainda não estiver confirmado)
+
 export async function PATCH(request: Request) {
   try {
     const cookieStore = await cookies();
     const userId = cookieStore.get('user_id')?.value;
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'Não autorizado.' }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: 'Não autorizado.' },
+        { status: 401 }
+      );
     }
 
-    const userResult = await query('SELECT email FROM users WHERE id = $1', [userId]);
+    const userResult = await query(
+      'SELECT email FROM users WHERE id = $1',
+      [userId]
+    );
+
     if (userResult.rows.length === 0) {
-      return NextResponse.json({ success: false, error: 'Utilizador não encontrado.' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'Utilizador não encontrado.' },
+        { status: 404 }
+      );
     }
+
     const userEmail = userResult.rows[0].email;
 
-    const { orderId } = await request.json();
+    const body = await request.json();
+    const orderId = Number(body.orderId);
 
-    if (!orderId) {
-      return NextResponse.json({ success: false, error: 'ID do pedido não fornecido.' }, { status: 400 });
+    if (!Number.isInteger(orderId) || orderId <= 0) {
+      return NextResponse.json(
+        { success: false, error: 'ID do pedido inválido.' },
+        { status: 400 }
+      );
     }
 
-    // Verifica se o pedido pertence ao utilizador e qual o estado atual do pagamento
-    const orderCheck = await query(`
-      SELECT * FROM orders WHERE id = $1 AND customer_email = $2
-    `, [orderId, userEmail]);
+    // Cancela apenas pedidos que pertencem ao utilizador
+    // e cujo pagamento ainda não foi confirmado.
+    const result = await query(
+      `
+        UPDATE orders
+        SET status = 'Cancelado',
+            payment_status = 'Cancelado'
+        WHERE id = $1
+          AND customer_email = $2
+          AND LOWER(TRIM(COALESCE(payment_status, ''))) 
+              NOT IN ('pago', 'paid', 'confirmed', 'approved')
+          AND LOWER(TRIM(COALESCE(status, ''))) <> 'cancelado'
+        RETURNING id
+      `,
+      [orderId, userEmail]
+    );
 
-    if (orderCheck.rows.length === 0) {
-      return NextResponse.json({ success: false, error: 'Pedido não encontrado.' }, { status: 404 });
+    if (result.rows.length === 0) {
+      // Verifica o motivo caso o pedido não tenha sido atualizado.
+      const orderCheck = await query(
+        `
+          SELECT status, payment_status
+          FROM orders
+          WHERE id = $1 AND customer_email = $2
+        `,
+        [orderId, userEmail]
+      );
+
+      if (orderCheck.rows.length === 0) {
+        return NextResponse.json(
+          { success: false, error: 'Pedido não encontrado.' },
+          { status: 404 }
+        );
+      }
+
+      const order = orderCheck.rows[0];
+      const paymentStatus = String(order.payment_status || '')
+        .trim()
+        .toLowerCase();
+
+      if (
+        ['pago', 'paid', 'confirmed', 'approved'].includes(paymentStatus)
+      ) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Este pedido já foi pago e não pode ser cancelado.'
+          },
+          { status: 400 }
+        );
+      }
+
+      if (String(order.status || '').trim().toLowerCase() === 'cancelado') {
+        return NextResponse.json(
+          { success: false, error: 'Este pedido já está cancelado.' },
+          { status: 400 }
+        );
+      }
+
+      return NextResponse.json(
+        { success: false, error: 'Não foi possível cancelar o pedido.' },
+        { status: 400 }
+      );
     }
 
-    const order = orderCheck.rows[0];
-
-    // Regra: Só pode cancelar se o pagamento NÃO estiver confirmado/pago
-    // (Ajuste os valores 'Pago', 'Confirmado', etc., conforme o que grava na sua base de dados)
-    const paymentStatus = order.payment_status?.toLowerCase() || '';
-    if (paymentStatus === 'pago' || paymentStatus === 'confirmed' || paymentStatus === 'approved') {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Não é possível cancelar um pedido com pagamento já confirmado.' 
-      }, { status: 400 });
-    }
-
-    // Atualiza o status do pedido para 'Cancelado'
-    await query(`
-      UPDATE orders 
-      SET status = 'Cancelado', payment_status = 'Cancelado' 
-      WHERE id = $1
-    `, [orderId]);
-
-    return NextResponse.json({ success: true, message: 'Pedido cancelado com sucesso.' }, { status: 200 });
-
-  } catch (error: any) {
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Pedido cancelado com sucesso.'
+      },
+      { status: 200 }
+    );
+  } catch (error) {
     console.error('Erro ao cancelar pedido:', error);
-    return NextResponse.json({ success: false, error: 'Erro interno ao cancelar o pedido.' }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Erro interno ao cancelar o pedido.'
+      },
+      { status: 500 }
+    );
   }
 }
