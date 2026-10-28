@@ -17,8 +17,44 @@ export default function Home() {
   const [message, setMessage] = useState('');
   const [loadingResend, setLoadingResend] = useState(false);
 
+  type Produto = {
+    id: number;
+    nome: string;
+    slug: string;
+    preco: number | string;
+    preco_promocional: number | string | null;
+    imagem: string;
+    descricao_curta: string;
+    quantidade_vendida: number | string;
+  };
+
+  const [produtos, setProdutos] = useState<Produto[]>([]);
+  const [carregandoProdutos, setCarregandoProdutos] = useState(true);
+
+
+
   // Verificar se o utilizador está logado ao carregar a página
   useEffect(() => {
+
+    async function buscarMaisVendidos() {
+      try {
+        const response = await fetch('/api/produtos/mais-vendidos');
+        
+        if (!response.ok) {
+          throw new Error('Erro ao buscar produtos');
+        }
+
+        const data: Produto[] = await response.json();
+        setProdutos(data);
+      } catch (error) {
+        console.error('Erro ao carregar mais vendidos:', error);
+      } finally {
+        setCarregandoProdutos(false);
+      }
+    }
+
+    buscarMaisVendidos();
+
     // Exemplo: verificar se existe um cookie ou dado no localStorage gravado no login
     const userSession = localStorage.getItem('userName'); // ou verificação por cookie/token
     if (userSession) {
@@ -102,6 +138,8 @@ export default function Home() {
     setCodigoVerificacao('');
     setMessage('');
   };
+
+
 
   // 2. Validação do código introduzido pelo utilizador
   const handleVerifyOtp = async (e: React.FormEvent) => {
@@ -231,34 +269,71 @@ export default function Home() {
       </section>
 
       {/* Seção de Mais Vendidos (Cardápio) */}
+      
       <section id="cardapio" className="max-w-7xl mx-auto px-8 py-12">
-        <h2 className="text-2xl font-bold mb-6 text-[#3D2C1E]">Mais Vendidos da Semana</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-          {[
-            { nome: 'Brigadeiro Gourmet de Pistache', preco: 'R$ 4,50/un', imagem: '/images/pistache.jpg'},
-            { nome: 'Bolo de Pote de Ninho com Nutella', preco: 'R$ 15,00/un', imagem: '/images/ninho.jpg'},
-            { nome: 'Torta de Limão Siciliano', preco: 'R$ 85,00/un', imagem: '/images/torta.jpg' },
-            { nome: 'Cupcake Red Velvet', preco: 'R$ 9,00/un', imagem: '/images/red.jpg' },
-          ].map((produto, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-sm border border-[#EFE7DE] p-4 flex flex-col justify-between">
-              <div>
-                <div className="h-40 rounded-md mb-3 overflow-hidden bg-[#EFE7DE] relative">
-                  <img 
-                    src={produto.imagem} 
-                    alt={produto.nome} 
-                    className="w-full h-full object-cover"
-                  />
+        <h2 className="text-2xl font-bold mb-6 text-[#3D2C1E]">
+          Mais Vendidos
+        </h2>
+
+        {carregandoProdutos ? (
+          <p className="text-gray-600">Carregando produtos...</p>
+        ) : produtos.length === 0 ? (
+          <p className="text-gray-600">
+            Nenhum produto vendido foi encontrado.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+            {produtos.map((produto) => {
+              const preco = Number(produto.preco);
+              const precoPromocional =
+                produto.preco_promocional == null
+                  ? null
+                  : Number(produto.preco_promocional);
+
+              const precoFinal =
+                precoPromocional !== null && precoPromocional > 0
+                  ? precoPromocional
+                  : preco;
+
+              return (
+                <div
+                  key={produto.id}
+                  className="bg-white rounded-lg shadow-sm border border-[#EFE7DE] p-4 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="h-40 rounded-md mb-3 overflow-hidden bg-[#EFE7DE]">
+                      <img
+                        src={produto.imagem}
+                        alt={produto.nome}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    <h3 className="font-semibold text-sm mb-1">
+                      {produto.nome}
+                    </h3>
+
+                    <p className="text-[#C94A67] font-bold text-sm mb-4">
+                      {precoFinal.toLocaleString('pt-BR', {
+                        style: 'currency',
+                        currency: 'BRL',
+                      })}
+                    </p>
+                  </div>
+
+                  <Link
+                    href={`/produto/${produto.slug}`}
+                    className="block text-center w-full bg-[#3D2C1E] text-white py-2 rounded text-sm font-medium hover:bg-[#2A1E14]"
+                  >
+                    Ver produto
+                  </Link>
                 </div>
-                <h3 className="font-semibold text-sm mb-1">{produto.nome}</h3>
-                <p className="text-[#C94A67] font-bold text-sm mb-4">{produto.preco}</p>
-              </div>
-              <button onClick={() => alert(`${produto.nome} adicionado ao carrinho!`)} className="w-full bg-[#3D2C1E] text-white py-2 rounded text-sm font-medium hover:bg-[#2A1E14]">
-                Adicionar ao Carrinho
-              </button>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </section>
+
 
       {/* Seção de Cadastro e Verificação por E-mail */}
       <section id="cadastro" className="bg-[#F5EBE6] py-16 px-8 mt-12 border-t border-[#EFE7DE]">
