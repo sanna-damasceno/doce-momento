@@ -143,12 +143,9 @@ export default function MeusPedidosPage() {
           <div className="space-y-4">
             {orders.map((order) => {
               const isPaymentConfirmed = [
-                'pago',
-                'paid',
-                'confirmed',
-                'approved',
-              ].includes(order.payment_status?.trim().toLowerCase());
-              const isCancelled = order.status === 'Cancelado';
+                'Pago / Em Preparo',
+              ].includes(String(order.payment_status || '').trim().toLowerCase());
+              const isCancelled = order.status?.trim().toLowerCase() === 'cancelado';
 
               return (
                 <div key={order.id} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
