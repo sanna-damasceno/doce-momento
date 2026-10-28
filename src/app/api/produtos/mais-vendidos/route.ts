@@ -26,7 +26,7 @@ export async function GET() {
             ON LOWER(TRIM(oi.product_name)) = LOWER(TRIM(p.nome))
         INNER JOIN orders o
             ON o.id = oi.order_id
-        WHERE LOWER(TRIM(o.payment_status)) = 'pago'
+        WHERE LOWER(TRIM(o.payment_status)) = 'pago%'
         GROUP BY
             p.id,
             p.nome,
