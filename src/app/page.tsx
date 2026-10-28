@@ -5,9 +5,6 @@ import Link from 'next/link';
 
 export default function Home() {
 
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userName, setUserName] = useState('');
-
   // Estados do formulário de leads/WhatsApp
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
@@ -55,27 +52,8 @@ export default function Home() {
 
     buscarMaisVendidos();
 
-    // Exemplo: verificar se existe um cookie ou dado no localStorage gravado no login
-    const userSession = localStorage.getItem('userName'); // ou verificação por cookie/token
-    if (userSession) {
-      setIsLoggedIn(true);
-      setUserName(userSession);
-    }
   }, []);
 
-
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-      });
-    } finally {
-      localStorage.removeItem('userName');
-      setIsLoggedIn(false);
-      setUserName('');
-      window.location.href = '/';
-    }
-  };
 
 
   // 1. Submissão do formulário de contacto/cadastro
@@ -194,61 +172,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#4A3525] font-sans">
-      {/* Topo / Header */}
-      <header className="bg-[#3D2C1E] text-white py-2 text-center text-xs">
-        Frete grátis em compras acima de R$ 150 | Entrega em até 24h
-      </header>
-      
-      <nav className="flex justify-between items-center px-8 py-4 border-b border-[#EFE7DE] max-w-7xl mx-auto">
-        <div className="flex items-center gap-2">
-          <span className="bg-[#C94A67] text-white w-8 h-8 rounded-full flex items-center justify-center font-bold">D</span>
-          <span className="text-xl font-bold tracking-wide text-[#3D2C1E]">Doce Momento</span>
-        </div>
-        <div className="hidden md:flex gap-6 text-sm font-medium">
-          <Link href="/" className="hover:text-[#C94A67]">Início</Link>
-          <Link href="/catalogo" className="hover:text-[#C94A67]">Cardápio</Link>
-          <a href="#cadastro" className="hover:text-[#C94A67]">Fale Conosco</a>
-        </div>
-
-        {/* Área de Autenticação Dinâmica no Cabeçalho */}
-        <div className="flex items-center gap-4">
-          {/* O carrinho só aparece se o utilizador estiver logado */}
-          {isLoggedIn && (
-            <Link href="/carrinho" className="bg-[#C94A67] text-white px-4 py-2 rounded-full text-xs font-medium hover:bg-[#b03d57]">
-              🛒 Carrinho
-            </Link>
-            
-          )}
-
-          {isLoggedIn && (
-            <Link href="/pedidos" className="bg-[#C94A67] text-white px-4 py-2 rounded-full text-xs font-medium hover:bg-[#b03d57]">
-              Pedidos
-            </Link>
-            
-          )}
-
-          {isLoggedIn ? (
-            <div className="flex items-center gap-3 text-xs">
-              <Link href="/perfil" className="font-semibold text-[#3D2C1E] hover:text-[#C94A67]">
-                Olá, {userName}
-              </Link>
-              <button onClick={handleLogout} className="text-red-500 hover:underline">
-                Sair
-              </button>
-            </div>
-          ) : (
-            <div className="flex gap-2 text-xs">
-              <Link href="/login" className="px-3 py-2 border border-[#3D2C1E] rounded font-medium hover:bg-[#3D2C1E] hover:text-white transition">
-                Entrar
-              </Link>
-              <Link href="/cadastro" className="px-3 py-2 bg-[#C94A67] text-white rounded font-medium hover:bg-[#b03d57]">
-                Criar Conta
-              </Link>
-            </div>
-          )}
-        </div>
-      </nav>
-
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-8 py-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
         <div>

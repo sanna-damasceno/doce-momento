@@ -53,14 +53,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] flex flex-col justify-between p-6 font-sans">
-      {/* Cabeçalho */}
-      <header className="flex justify-between items-center max-w-6xl w-full px-4 mx-auto">
-        <div className="flex items-center gap-2">
-          <div className="bg-[#D9537A] text-white font-bold w-8 h-8 rounded-full flex items-center justify-center font-serif text-lg">D</div>
-          <span className="font-serif text-xl font-bold text-[#3D2314]">Doce Momento</span>
-        </div>
-        <Link href="/" className="text-xs text-gray-500 hover:text-black">← Voltar para loja</Link>
-      </header>
 
       {/* Conteúdo Principal (Card Central) */}
       <main className="flex items-center justify-center my-auto py-4">
