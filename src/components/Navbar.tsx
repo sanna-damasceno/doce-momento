@@ -12,6 +12,10 @@ export default function Navbar() {
 
   const pathname = usePathname();
 
+  if (pathname.startsWith('/admin')) {
+    return null;
+    }
+
   useEffect(() => {
     let ativo = true;
 
