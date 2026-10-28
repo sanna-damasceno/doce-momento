@@ -114,10 +114,7 @@ export default function MeusPedidosPage() {
     <div className="min-h-screen bg-[#FDFBF7] py-8 px-4 font-sans relative">
       <div className="max-w-4xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-serif text-[#3D2314]">Meus Pedidos</h1>
-          <Link href="/catalogo" className="text-xs text-[#D9537A] font-semibold hover:underline">
-            ← Continuar a Comprar
-          </Link>
+          <h1 className="text-3xl font-serif font-bold text-[#3D2314] mb-1">Meus Pedidos</h1>
         </div>
 
         {error && (

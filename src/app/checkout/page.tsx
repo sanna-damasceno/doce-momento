@@ -29,8 +29,8 @@ export default function CheckoutPage() {
     shipping_address: '',
     delivery_date: '2026-10-12', 
     neighborhood: '',
-    city: 'São Paulo',
-    state: 'SP',
+    city: 'Parintins',
+    state: 'AM',
     zip_code: '',
     notes: '',
     payment_type: 'credit_card',
@@ -215,6 +215,11 @@ export default function CheckoutPage() {
                   <input type="text" name="city" required value={formData.city} onChange={handleChange} className="w-full p-2 border rounded text-sm" />
                 </div>
               </div>
+              {/* Observações */}
+              <div className='mt-4'>
+                <label className="block text-xs font-medium text-gray-700 mb-1">Observações do pedido</label>
+                <textarea name="notes" value={formData.notes} onChange={handleChange} rows={3} className="w-full p-2 border rounded text-sm" placeholder="Ex: Tocar a campainha 2x..." maxLength={200} />
+              </div>
             </div>
 
             {/* Bloco 2: Forma de Pagamento */}
@@ -241,12 +246,6 @@ export default function CheckoutPage() {
                   </div>
                 </label>
               </div>
-            </div>
-
-            {/* Observações */}
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-              <label className="block text-sm font-semibold text-[#3D2314] mb-2">Observações do pedido</label>
-              <textarea name="notes" value={formData.notes} onChange={handleChange} rows={3} className="w-full p-2 border rounded text-sm" placeholder="Ex: Tocar a campainha 2x..." maxLength={200} />
             </div>
 
           </div>

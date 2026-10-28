@@ -35,21 +35,6 @@ export default async function DetalheProdutoPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] flex flex-col justify-between font-sans text-[#3D2C1E]">
-      {/* Cabeçalho */}
-      <header className="border-b border-[#EFE7DE] bg-white py-4 px-6">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="bg-[#D9537A] text-white font-bold w-8 h-8 rounded-full flex items-center justify-center font-serif text-lg">D</div>
-            <span className="font-serif text-xl font-bold text-[#3D2314]">Doce Momento</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/carrinho" className="text-xs font-semibold bg-[#FCE8ED] text-[#D9537A] px-3 py-1.5 rounded-full hover:bg-[#f8d7df]">
-              🛒 Ver Carrinho
-            </Link>
-            <Link href="/catalogo" className="text-xs text-gray-500 hover:text-black">← Voltar ao Catálogo</Link>
-          </div>
-        </div>
-      </header>
 
       {/* Conteúdo do Produto */}
       <main className="max-w-6xl mx-auto px-4 py-10 w-full flex-grow">
