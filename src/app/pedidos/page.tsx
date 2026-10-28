@@ -24,6 +24,18 @@ interface OrderItem {
   price: number;
 }
 
+function isPaymentConfirmed(paymentStatus: string | null | undefined) {
+  const status = String(paymentStatus || '').trim().toLowerCase();
+
+  return [
+    'pago',
+    'paid',
+    'confirmed',
+    'approved',
+    'pago / em preparo',
+  ].includes(status);
+}
+
 export default function MeusPedidosPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -142,10 +154,10 @@ export default function MeusPedidosPage() {
         ) : (
           <div className="space-y-4">
             {orders.map((order) => {
-              const isPaymentConfirmed = [
-                'Pago / Em Preparo',
-              ].includes(String(order.payment_status || '').trim().toLowerCase());
-              const isCancelled = order.status?.trim().toLowerCase() === 'cancelado';
+              const paymentConfirmed = isPaymentConfirmed(order.payment_status);
+
+              const isCancelled =
+                order.status?.trim().toLowerCase() === 'cancelado';
 
               return (
                 <div key={order.id} className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -180,7 +192,7 @@ export default function MeusPedidosPage() {
                         Ver Detalhes
                       </button>
 
-                      {!isPaymentConfirmed && !isCancelled && (
+                      {!paymentConfirmed && !isCancelled && (
                         <button
                           onClick={() => handleCancelOrder(order.id)}
                           className="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-md font-medium hover:bg-red-100 transition"
@@ -251,14 +263,15 @@ export default function MeusPedidosPage() {
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
-              {!['pago', 'confirmed', 'approved'].includes(selectedOrder.payment_status?.toLowerCase()) && selectedOrder.status !== 'Cancelado' && (
-                <button
-                  onClick={() => handleCancelOrder(selectedOrder.id)}
-                  className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-xs font-semibold hover:bg-red-100 transition"
-                >
-                  Cancelar Pedido
-                </button>
-              )}
+              {!isPaymentConfirmed(selectedOrder.payment_status) &&
+                selectedOrder.status?.trim().toLowerCase() !== 'cancelado' && (
+                  <button
+                    onClick={() => handleCancelOrder(selectedOrder.id)}
+                    className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-xs font-semibold hover:bg-red-100 transition"
+                  >
+                    Cancelar Pedido
+                  </button>
+                )}
               <button
                 onClick={() => setSelectedOrder(null)}
                 className="bg-[#3D2314] text-white px-4 py-2 rounded-lg text-xs font-semibold hover:bg-black transition"
