@@ -33,6 +33,7 @@ function isPaymentConfirmed(paymentStatus: string | null | undefined) {
     'confirmed',
     'approved',
     'pago / em preparo',
+      'aprovado'
   ].includes(status);
 }
 
