@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface Props {
@@ -16,7 +16,29 @@ export default function BotaoComprarModal({ produtoId, preco, nomeProduto }: Pro
   const [observacao, setObservacao] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const [usuarioLogado, setUsuarioLogado] = useState(false);
+  const [verificandoLogin, setVerificandoLogin] = useState(true);
 
+  useEffect(() => {
+    async function verificarLogin() {
+      try {
+        const res = await fetch('/api/auth/me', {
+          cache: 'no-store',
+        });
+
+        setUsuarioLogado(res.ok);
+      } catch {
+        setUsuarioLogado(false);
+      } finally {
+        setVerificandoLogin(false);
+      }
+    }
+
+    verificarLogin();
+  }, []);
+
+
+  
   const handleConfirmarAdicao = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -34,11 +56,16 @@ export default function BotaoComprarModal({ produtoId, preco, nomeProduto }: Pro
       });
 
       const data = await res.json();
+
+      if (res.status === 401) {
+        router.push('/login?redirect=/carrinho');
+        return;
+      }
+
       if (data.success) {
-        // Redireciona de volta para a tela de carrinho após confirmar
         router.push('/carrinho');
       } else {
-        alert('Erro ao adicionar ao carrinho.');
+        alert(data.error || 'Erro ao adicionar ao carrinho.');
         setLoading(false);
       }
     } catch (err) {
@@ -48,18 +75,32 @@ export default function BotaoComprarModal({ produtoId, preco, nomeProduto }: Pro
     }
   };
 
+
   return (
     <>
       {/* Botão Principal */}
-      <button 
-        onClick={() => setModalAberto(true)}
-        className="w-full bg-[#D9537A] hover:bg-[#c2466a] text-white py-3 rounded-lg font-medium text-sm transition shadow-md cursor-pointer"
+      
+      <button
+        type="button"
+        disabled={verificandoLogin}
+        onClick={() => {
+          if (!usuarioLogado) {
+            router.push('/login?redirect=/carrinho');
+            return;
+          }
+
+          setModalAberto(true);
+        }}
+        className="w-full bg-[#D9537A] hover:bg-[#c2466a] text-white py-3 rounded-lg font-medium text-sm transition shadow-md cursor-pointer disabled:opacity-50"
       >
-        Adicionar ao Carrinho - R$ {Number(preco).toFixed(2)}
+        {verificandoLogin
+          ? 'Verificando login...'
+          : `Adicionar ao Carrinho - R$ ${Number(preco).toFixed(2)}`}
       </button>
 
+
       {/* MODAL */}
-      {modalAberto && (
+      {modalAberto && usuarioLogado && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-[#EFE7DE]">
             <div className="flex justify-between items-center mb-4">

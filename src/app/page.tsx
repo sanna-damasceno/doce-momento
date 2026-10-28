@@ -63,10 +63,18 @@ export default function Home() {
     }
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('userName');
-    setIsLoggedIn(false);
-    window.location.reload();
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+    } finally {
+      localStorage.removeItem('userName');
+      setIsLoggedIn(false);
+      setUserName('');
+      window.location.href = '/';
+    }
   };
 
 

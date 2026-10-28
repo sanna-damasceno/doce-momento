@@ -58,7 +58,7 @@ export default async function CatalogoPage() {
 
       {/* Conteúdo Principal */}
       <main className="max-w-6xl mx-auto px-4 py-8 w-full flex-grow">
-        {/* Migalhas de pão / Título */}
+        {/* Título */}
         <div className="mb-6">
           <p className="text-xs text-gray-400 mb-1">Home &gt; Catálogo</p>
           <h1 className="text-3xl font-serif font-bold text-[#3D2314]">Catálogo de Doces</h1>
