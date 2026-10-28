@@ -108,15 +108,6 @@ export default function CarrinhoPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] flex flex-col justify-between font-sans text-[#3D2C1E]">
-      <header className="border-b border-[#EFE7DE] bg-white py-4 px-6 shadow-sm">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="bg-[#D9537A] text-white font-bold w-8 h-8 rounded-full flex items-center justify-center font-serif text-lg">D</div>
-            <span className="font-serif text-xl font-bold text-[#3D2314]">Doce Momento</span>
-          </div>
-          <Link href="/catalogo" className="text-xs text-[#D9537A] font-semibold hover:underline">← Voltar ao Catálogo</Link>
-        </div>
-      </header>
 
       <main className="max-w-6xl mx-auto px-4 py-8 w-full flex-grow">
         <h1 className="text-3xl font-serif font-bold text-[#3D2314] mb-1">Seu Carrinho</h1>

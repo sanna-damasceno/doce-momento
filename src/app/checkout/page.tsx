@@ -144,8 +144,7 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-[#FDFBF7] py-8 px-4 font-sans">
       <div className="max-w-6xl mx-auto">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-serif text-[#3D2314]">Finalizar Pedido</h1>
-          <Link href="/carrinho" className="text-xs text-[#D9537A] font-semibold hover:underline">← Voltar ao Carrinho</Link>
+          <h1 className="text-3xl font-serif font-bold text-[#3D2314] mb-1">Finalizar Pedido</h1>
         </div>
 
         <form onSubmit={handleSubmitOrder} className="grid grid-cols-1 lg:grid-cols-3 gap-8">

@@ -113,7 +113,7 @@ export default function Navbar() {
               <>
                 <Link
                   href="/carrinho"
-                  className="font-semibold text-[#C94A67] hover:text-[#b03d57]"
+                  className="hover:text-[#C94A67]"
                 >
                   Carrinho
                 </Link>
