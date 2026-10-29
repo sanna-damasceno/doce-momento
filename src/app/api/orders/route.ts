@@ -29,6 +29,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Dados incompletos para criar o pedido.' }, { status: 400 });
     }
 
+    const deliveryDate = String(body.delivery_date || '');
+    const [year, month, day] = deliveryDate.split('-').map(Number);
+
+    const selectedDate = new Date(year, month - 1, day);
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+
+    const minDate = new Date(today);
+    minDate.setDate(minDate.getDate() + 3);
+
+    const validDate =
+      /^\d{4}-\d{2}-\d{2}$/.test(deliveryDate) &&
+      selectedDate.getFullYear() === year &&
+      selectedDate.getMonth() === month - 1 &&
+      selectedDate.getDate() === day;
+
+    if (!validDate || selectedDate < minDate) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'A data de entrega deve ser pelo menos 3 dias após a data do pedido.',
+        },
+        { status: 400 }
+      );
+    }
+
     // 1. Inserir o pedido na base de dados PostgreSQL usando 'pg'
     const orderQuery = `
       INSERT INTO orders (

@@ -141,7 +141,6 @@ export default function BotaoComprarModal({ produtoId, preco, nomeProduto }: Pro
                 >
                   <option value="Embalagem Simples">Embalagem Simples</option>
                   <option value="Caixa para Presente">Caixa para Presente (+ R$ 5,00)</option>
-                  <option value="Embalagem Festiva com Laço">Embalagem Festiva com Laço</option>
                 </select>
               </div>
 

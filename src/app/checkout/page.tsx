@@ -14,6 +14,21 @@ interface ItemCarrinho {
   observacao?: string;
 }
 
+function getMinDeliveryDate() {
+  const today = new Date();
+
+  // Adiciona 3 dias à data atual
+  today.setDate(today.getDate() + 3);
+
+  // Formata como YYYY-MM-DD para o input date
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+
+  return `${year}-${month}-${day}`;
+}
+
+
 export default function CheckoutPage() {
   const router = useRouter();
   
@@ -27,7 +42,7 @@ export default function CheckoutPage() {
     customer_email: '',
     customer_phone: '',
     shipping_address: '',
-    delivery_date: '2026-10-12', 
+    delivery_date: '', 
     neighborhood: '',
     city: 'Parintins',
     state: 'AM',
@@ -202,7 +217,7 @@ export default function CheckoutPage() {
                   <label className="block text-xs font-medium text-gray-700 mb-1">CEP *</label>
                   <input type="text" name="zip_code" required value={formData.zip_code} onChange={handleChange} className="w-full p-2 border rounded text-sm" placeholder="01234-567" />
                 </div>
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Endereço / Rua *</label>
                   <input type="text" name="shipping_address" required value={formData.shipping_address} onChange={handleChange} className="w-full p-2 border rounded text-sm" placeholder="Rua das Flores, 123" />
                 </div>
@@ -213,6 +228,30 @@ export default function CheckoutPage() {
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Cidade *</label>
                   <input type="text" name="city" required value={formData.city} onChange={handleChange} className="w-full p-2 border rounded text-sm" />
+                </div>
+                {/* DATA DE ENTREGA */}
+                <div>
+                  <label
+                    htmlFor="delivery_date"
+                    className="block text-xs font-medium text-gray-700 mb-1"
+                  >
+                    Data de entrega *
+                  </label>
+
+                  <input
+                    type="date"
+                    id="delivery_date"
+                    name="delivery_date"
+                    required
+                    min={getMinDeliveryDate()}
+                    value={formData.delivery_date}
+                    onChange={handleChange}
+                    className="w-full p-2 border rounded text-sm"
+                  />
+
+                  <p className="text-xs text-gray-500 mt-1">
+                    Escolha uma data com pelo menos 3 dias de antecedência.
+                  </p>
                 </div>
               </div>
               {/* Observações */}
