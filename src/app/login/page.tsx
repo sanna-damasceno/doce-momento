@@ -59,13 +59,16 @@ export default function LoginPage() {
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden max-w-4xl w-full grid grid-cols-1 md:grid-cols-2">
           
           {/* Lado Esquerdo: Imagem com caixa de doces */}
-          <div className="relative hidden md:flex items-center justify-center bg-[#F4EBE1] p-8">
-            <div className="bg-white p-4 rounded-xl shadow-md z-10 text-center max-w-xs">
-              <div className="w-full h-64 rounded-lg bg-cover bg-center mb-4 flex items-end justify-center pb-4 text-white font-serif text-xl" style={{ backgroundImage: `url('https://images.unsplash.com/photo-1541781774459-bb2af2f05b55?auto=format&fit=crop&q=80&w=500')` }}>
-                <span className="bg-black/40 px-3 py-1 rounded backdrop-blur-sm text-sm">sabor e afeto</span>
-              </div>
-            </div>
+
+          <div className="relative hidden min-h-[600px] overflow-hidden bg-[#F4EBE1] md:block">
+            <img
+              src="/images/login.jpg"
+              alt="Caixa de doces artesanais da Doce Momento"
+              className="absolute inset-0 h-full w-full object-cover object-center"
+            />
           </div>
+
+
 
           {/* Lado Direito: Formulário de Login */}
           <div className="p-8 md:p-10 flex flex-col justify-center">

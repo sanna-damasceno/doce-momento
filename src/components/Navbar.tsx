@@ -105,12 +105,8 @@ export default function Navbar() {
               Catálogo
             </Link>
 
-            <Link href="/sobre" className="hover:text-[#C94A67]">
+            <Link href="/#sobre" className="hover:text-[#C94A67]">
               Sobre
-            </Link>
-
-            <Link href="/contato" className="hover:text-[#C94A67]">
-              Contato
             </Link>
 
             {!verificandoLogin && usuarioLogado && (

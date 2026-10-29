@@ -173,38 +173,91 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#4A3525] font-sans">
       {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-8 py-12 grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-        <div>
-          <span className="bg-[#FCE8ED] text-[#C94A67] text-xs font-semibold px-3 py-1 rounded-full">
-            Entrega em até 24 horas
-          </span>
-          <h1 className="text-4xl md:text-5xl font-bold mt-4 mb-4 leading-tight text-[#3D2C1E]">
-            Doces Artesanais para seus Momentos Especiais
-          </h1>
-          <p className="text-gray-600 mb-6 text-sm">
-            Feitos com amor e ingredientes selecionados. Surpreenda quem você ama com o verdadeiro sabor do carinho.
-          </p>
-          <div className="flex gap-4">
-            <Link href="/catalogo" className="bg-[#C94A67] text-white px-6 py-3 rounded-md font-medium shadow hover:bg-[#b03d57]">
-              Ver Cardápio
-            </Link>
+      
+      {/* Banner principal */}
+      <section className="bg-[#FDFBF7]">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-6 py-14 md:grid-cols-2 md:px-8 md:py-20">
+          <div>
+            <span className="inline-flex rounded-full bg-[#FCE8ED] px-4 py-2 text-xs font-semibold text-[#C94A67]">
+              ✦ Encomendas com antecedência de 3 dias
+            </span>
+
+            <h1 className="mt-6 max-w-xl text-4xl font-bold leading-tight text-[#4A2C1D] md:text-5xl lg:text-6xl">
+              Doces artesanais para tornar seus momentos especiais
+            </h1>
+
+            <p className="mt-5 max-w-lg text-base leading-7 text-[#8A7161]">
+              Sabores preparados com carinho para aniversários,
+              encontros em família, presentes e celebrações especiais.
+            </p>
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/catalogo"
+                className="rounded-full bg-[#C6385A] px-7 py-3.5 font-semibold text-white transition hover:bg-[#A92D4B]"
+              >
+                Ver nosso cardápio
+              </Link>
+
+              <a
+                href="#como-funciona"
+                className="rounded-full border border-[#6B4937] px-7 py-3.5 font-semibold text-[#6B4937] transition hover:bg-[#F5EBE6]"
+              >
+                Como funciona
+              </a>
+            </div>
+
+            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[#8A7161]">
+              <span>♡ Produção artesanal</span>
+              <span>♡ Encomendas personalizadas</span>
+            </div>
           </div>
-        </div>
-        <div className="rounded-2xl overflow-hidden shadow-lg h-80 relative">
-          <img 
-            src="/images/destaque.jpg" 
-            alt="Doces Artesanais Doce Momento" 
-            className="w-full h-full object-cover"
-          />
+
+          <div className="relative">
+            <img
+              src="/images/destaque.jpg"
+              alt="Seleção de doces artesanais da Doce Momento"
+              className="h-[320px] w-full rounded-[2rem] object-cover shadow-lg md:h-[440px]"
+            />
+
+            <div className="absolute bottom-4 left-4 right-4 rounded-2xl bg-white/95 p-4 shadow-md">
+              <p className="font-semibold text-[#4A2C1D]">
+                Um doce para cada ocasião
+              </p>
+              <p className="mt-1 text-sm text-[#8A7161]">
+                Explore nosso cardápio e planeje sua próxima encomenda.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
+      
       {/* Seção de Mais Vendidos (Cardápio) */}
       
       <section id="cardapio" className="max-w-7xl mx-auto px-8 py-12">
-        <h2 className="text-2xl font-bold mb-6 text-[#3D2C1E]">
-          Mais Vendidos
-        </h2>
+        
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#C6385A]">
+              Favoritos dos clientes
+            </p>
+            <h2 className="mt-2 text-3xl font-bold text-[#4A2C1D]">
+              Mais vendidos
+            </h2>
+            <p className="mt-2 text-sm text-[#8A7161]">
+              Conheça os doces que fazem sucesso por aqui.
+            </p>
+          </div>
+
+          <Link
+            href="/catalogo"
+            className="text-sm font-semibold text-[#A92D4B] hover:underline"
+          >
+            Ver todos →
+          </Link>
+        </div>
+
 
         {carregandoProdutos ? (
           <p className="text-gray-600">Carregando produtos...</p>
@@ -265,113 +318,233 @@ export default function Home() {
         )}
       </section>
 
-
-      {/* Seção de Cadastro e Verificação por E-mail */}
-      <section id="cadastro" className="bg-[#F5EBE6] py-16 px-8 mt-12 border-t border-[#EFE7DE]">
-        <div className="max-w-xl mx-auto bg-white p-8 rounded-xl shadow-md">
-          <h2 className="text-2xl font-bold text-[#3D2C1E] mb-2 text-center">Fale Conosco no WhatsApp</h2>
-          <p className="text-gray-600 text-sm mb-6 text-center">
-            {step === 'form' 
-              ? 'Insira os seus dados para receber o código de confirmação e iniciar a conversa.' 
-              : `Digite o código de 6 dígitos enviado para ${email}`}
-          </p>
-          
-          {step === 'form' ? (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Nome Completo *</label>
-                <input 
-                  type="text" 
-                  required 
-                  value={nome} 
-                  onChange={(e) => setNome(e.target.value)}
-                  placeholder="Maria Silva" 
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#C94A67]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">E-mail *</label>
-                <input 
-                  type="email" 
-                  required 
-                  value={email} 
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="maria@email.com" 
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#C94A67]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">WhatsApp *</label>
-                <input 
-                  type="text" 
-                  required 
-                  value={whatsapp} 
-                  onChange={(e) => setWhatsapp(e.target.value)}
-                  placeholder="(11) 98765-4321" 
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:border-[#C94A67]"
-                />
-              </div>
-              <button 
-                type="submit" 
-                className="w-full bg-[#C94A67] text-white py-3 rounded font-medium text-sm hover:bg-[#b03d57] transition"
-              >
-                Continuar e Enviar Código
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleVerifyOtp} className="space-y-4">
-              <p className="text-xs text-gray-600 text-center mb-2">
-                Enviamos uma mensagem com o código de verificação para o seu e-mail.
+      
+      {/* Categorias */}
+      <section id="categorias" className="border-y border-[#F0E0D0] bg-[#FFF3E3]">
+        <div className="mx-auto max-w-7xl px-6 py-14 md:px-8">
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#C6385A]">
+                Encontre seu favorito
               </p>
 
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">Código de Verificação (6 dígitos) *</label>
-                <input 
-                  type="text" 
-                  maxLength={6}
-                  required 
-                  value={codigoVerificacao} 
-                  onChange={(e) => setCodigoVerificacao(e.target.value)}
-                  placeholder="123456" 
-                  className="w-full text-center tracking-widest text-lg border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-[#C94A67]"
-                />
-              </div>
+              <h2 className="mt-2 text-3xl font-bold text-[#4A2C1D]">
+                Nossas categorias
+              </h2>
 
-              <button 
-                type="submit" 
-                className="w-full bg-green-600 text-white py-3 rounded font-medium text-sm hover:bg-green-700 transition"
-              >
-                Confirmar Código e Abrir WhatsApp
-              </button>
-
-              <div className="flex justify-between items-center mt-3 text-sm">
-                <button 
-                  type="button"
-                  onClick={handleResendOtp}
-                  disabled={loadingResend}
-                  className="text-[#C94A67] hover:underline font-medium"
-                >
-                  {loadingResend ? 'A reenviar...' : 'Reenviar Código'}
-                </button>
-
-                <button 
-                  type="button"
-                  onClick={handleBackToForm}
-                  className="text-gray-500 hover:underline"
-                >
-                  Voltar / Alterar Dados
-                </button>
-              </div>
-            </form>
-          )}
-
-          {message && (
-            <div className="mt-4 p-3 text-sm rounded-md bg-red-50 text-red-700 text-center">
-              {message}
+              <p className="mt-2 text-sm text-[#8A7161]">
+                Delícias artesanais para todos os momentos.
+              </p>
             </div>
-          )}
+
+            <Link
+              href="/catalogo"
+              className="text-sm font-semibold text-[#A92D4B] hover:underline"
+            >
+              Ver cardápio completo →
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            {[
+              {
+                nome: "Brigadeiros",
+                descricao: "Gourmet e tradicionais",
+                imagem: "/images/brigadeiro.jpg",
+              },
+              {
+                nome: "Bolos de Pote",
+                descricao: "Cremosos em camadas",
+                imagem: "/images/ninho.jpg",
+              },
+              {
+                nome: "Tortas",
+                descricao: "Inteiras para compartilhar",
+                imagem: "/images/torta.jpg",
+              },
+              {
+                nome: "Cupcakes",
+                descricao: "Fofinhos e decorados",
+                imagem: "/images/cupcake-baunilha.jpg",
+              },
+              {
+                nome: "Caixas Presente",
+                descricao: "Prontas para presentear",
+                imagem: "/images/caixa-de-presente.jpg",
+              },
+            ].map((categoria) => (
+              <Link
+                key={categoria.nome}
+                href={`/catalogo?categoria=${encodeURIComponent(categoria.nome)}`}
+                className="group rounded-2xl border border-[#F0E0D0] bg-[#FDFBF7] p-5 transition duration-300 hover:-translate-y-1 hover:border-[#E5B6C1] hover:shadow-md"
+              >
+                <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-[#F0E0D0] bg-[#FCE8ED]">
+                  <img
+                    src={categoria.imagem}
+                    alt={categoria.nome}
+                    className="h-full w-full object-cover transition duration-300 group-hover:scale-110"
+                  />
+                </div>
+
+                <h3 className="mt-4 font-bold text-[#4A2C1D]">
+                  {categoria.nome}
+                </h3>
+
+                <p className="mt-2 text-xs leading-5 text-[#8A7161]">
+                  {categoria.descricao}
+                </p>
+
+                <span className="mt-4 block text-sm font-semibold text-[#C6385A]">
+                  Explorar →
+                </span>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
+
+
+      
+      {/* Como funciona */}
+      <section id="como-funciona" className="bg-[#FFF3E3]">
+        <div className="mx-auto max-w-7xl px-6 py-16 md:px-8">
+          <div className="mx-auto mb-10 max-w-xl text-center">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#C6385A]">
+              Simples assim
+            </p>
+            <h2 className="mt-2 text-3xl font-bold text-[#4A2C1D]">
+              Seu pedido em três etapas
+            </h2>
+            <p className="mt-3 text-sm leading-6 text-[#8A7161]">
+              Planeje sua encomenda com tranquilidade e escolha os doces
+              para o seu momento especial.
+            </p>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-3">
+            {[
+              {
+                numero: "01",
+                titulo: "Escolha seus doces",
+                descricao: "Explore o catálogo e encontre seus sabores favoritos.",
+              },
+              {
+                numero: "02",
+                titulo: "Defina a entrega",
+                descricao: "Escolha uma data respeitando a antecedência mínima de 3 dias.",
+              },
+              {
+                numero: "03",
+                titulo: "Finalize seu pedido",
+                descricao: "Confira os dados da encomenda e acompanhe o pedido.",
+              },
+            ].map((etapa) => (
+              <div
+                key={etapa.numero}
+                className="rounded-2xl border border-[#F0E0D0] bg-[#FDFBF7] p-7 text-center"
+              >
+                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#4A2C1D] text-lg font-bold text-white">
+                  {etapa.numero}
+                </div>
+                <h3 className="mt-5 text-lg font-bold text-[#4A2C1D]">
+                  {etapa.titulo}
+                </h3>
+                <p className="mt-3 text-sm leading-6 text-[#8A7161]">
+                  {etapa.descricao}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      
+      {/* Sobre a Doce Momento */}
+      <section id="sobre" className="bg-[#FDFBF7]">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-6 py-16 md:grid-cols-2 md:px-8 md:py-20">
+          <div className="relative">
+            <img
+              src="/images/login.jpg"
+              alt="Preparação artesanal dos doces da Doce Momento"
+              className="h-80 w-full rounded-[2rem] object-cover shadow-md md:h-[420px]"
+            />
+
+            <div className="absolute -bottom-4 right-4 rounded-2xl bg-white p-4 shadow-lg md:right-6">
+              <p className="font-bold text-[#4A2C1D]">
+                Doce Momento
+              </p>
+              <p className="mt-1 text-xs text-[#8A7161]">
+                Carinho em cada detalhe ♡
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-4 md:pt-0">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#C6385A]">
+              Nossa história
+            </p>
+
+            <h2 className="mt-3 text-3xl font-bold leading-tight text-[#4A2C1D] md:text-4xl">
+              Mais do que doces, criamos momentos especiais
+            </h2>
+
+            <p className="mt-5 text-sm leading-7 text-[#8A7161] md:text-base">
+              A Doce Momento é uma confeitaria artesanal dedicada a
+              tornar suas celebrações ainda mais doces. Acreditamos que
+              pequenos detalhes podem transformar ocasiões simples em
+              lembranças inesquecíveis.
+            </p>
+
+            <p className="mt-4 text-sm leading-7 text-[#8A7161] md:text-base">
+              Cada encomenda é uma oportunidade de compartilhar carinho,
+              reunir pessoas queridas e celebrar os momentos que realmente
+              importam.
+            </p>
+
+            <div className="mt-7 grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <div className="flex items-start gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FCE8ED]">
+                
+                </span>
+                <div>
+                  <h3 className="font-bold text-[#4A2C1D]">
+                    Feito com carinho
+                  </h3>
+                  <p className="mt-1 text-sm leading-5 text-[#8A7161]">
+                    Atenção aos detalhes em cada encomenda.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#FCE8ED]">
+                  
+                </span>
+                <div>
+                  <h3 className="font-bold text-[#4A2C1D]">
+                    Para celebrar
+                  </h3>
+                  <p className="mt-1 text-sm leading-5 text-[#8A7161]">
+                    Doces para presentes, encontros e comemorações.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Link
+              href="/catalogo"
+              className="mt-8 inline-flex rounded-full bg-[#C6385A] px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-[#A92D4B]"
+            >
+              Conheça nossos doces →
+            </Link>
+          </div>
+        </div>
+      </section>
+
+
+
+
+      
 
       {/* Botão Flutuante Direto para o WhatsApp da Empresa (RF12)[cite: 21] */}
       <div className="fixed bottom-6 right-6 z-50">

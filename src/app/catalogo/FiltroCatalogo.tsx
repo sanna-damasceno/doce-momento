@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 type Produto = {
   id: number;
@@ -20,7 +21,19 @@ type Props = {
 };
 
 export default function FiltroCatalogo({ produtos }: Props) {
+  const searchParams = useSearchParams();
+
   const [categoriaSelecionada, setCategoriaSelecionada] = useState('Todas');
+
+  useEffect(() => {
+    const categoriaURL = searchParams.get('categoria');
+
+    if (categoriaURL) {
+      setCategoriaSelecionada(categoriaURL);
+    } else {
+      setCategoriaSelecionada('Todas');
+    }
+  }, [searchParams]);
 
   // Busca as categorias que realmente existem nos produtos
   const categorias = Array.from(
