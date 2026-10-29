@@ -234,93 +234,99 @@ export default function Home() {
 
       
       {/* Seção de Mais Vendidos (Cardápio) */}
-      
-      <section id="cardapio" className="max-w-7xl mx-auto px-8 py-12">
-        
-        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#C6385A]">
-              Favoritos dos clientes
-            </p>
-            <h2 className="mt-2 text-3xl font-bold text-[#4A2C1D]">
-              Mais vendidos
-            </h2>
-            <p className="mt-2 text-sm text-[#8A7161]">
-              Conheça os doces que fazem sucesso por aqui.
-            </p>
+      <section id="cardapio" className="border-y border-[#F0E0D0] bg-[#FFF3E3] py-14">
+        <div className="mx-auto max-w-7xl px-6 md:px-8">
+          
+          {/* Cabeçalho da Seção */}
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#C6385A]">
+                Favoritos dos clientes
+              </p>
+              <h2 className="mt-2 text-3xl font-bold text-[#4A2C1D]">
+                Mais vendidos
+              </h2>
+              <p className="mt-2 text-sm text-[#8A7161]">
+                Conheça os doces que fazem sucesso por aqui.
+              </p>
+            </div>
+
+            <Link
+              href="/catalogo"
+              className="text-sm font-semibold text-[#A92D4B] hover:underline"
+            >
+              Ver todos →
+            </Link>
           </div>
 
-          <Link
-            href="/catalogo"
-            className="text-sm font-semibold text-[#A92D4B] hover:underline"
-          >
-            Ver todos →
-          </Link>
-        </div>
+          {/* Conteúdo dinâmico (Carregando, Vazio ou Lista) */}
+          {carregandoProdutos ? (
+            <div className="py-8 text-center text-[#8A7161]">
+              <p>Carregando produtos...</p>
+            </div>
+          ) : produtos.length === 0 ? (
+            <div className="rounded-2xl border border-[#F0E0D0] bg-[#FDFBF7] p-8 text-center text-[#8A7161]">
+              <p className="font-medium">Nenhum produto vendido foi encontrado no momento.</p>
+              <p className="mt-1 text-xs text-[#8A7161]/80">Assim que as primeiras vendas forem concluídas, elas aparecerão aqui automaticamente.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+              {produtos.map((produto) => {
+                const preco = Number(produto.preco);
+                const precoPromocional =
+                  produto.preco_promocional == null
+                    ? null
+                    : Number(produto.preco_promocional);
 
+                const precoFinal =
+                  precoPromocional !== null && precoPromocional > 0
+                    ? precoPromocional
+                    : preco;
 
-        {carregandoProdutos ? (
-          <p className="text-gray-600">Carregando produtos...</p>
-        ) : produtos.length === 0 ? (
-          <p className="text-gray-600">
-            Nenhum produto vendido foi encontrado.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {produtos.map((produto) => {
-              const preco = Number(produto.preco);
-              const precoPromocional =
-                produto.preco_promocional == null
-                  ? null
-                  : Number(produto.preco_promocional);
+                return (
+                  <div
+                    key={produto.id}
+                    className="bg-white rounded-2xl shadow-sm border border-[#F0E0D0] p-4 flex flex-col justify-between transition hover:shadow-md"
+                  >
+                    <div>
+                      <div className="h-40 rounded-xl mb-3 overflow-hidden bg-[#EFE7DE]">
+                        <img
+                          src={produto.imagem}
+                          alt={produto.nome}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
 
-              const precoFinal =
-                precoPromocional !== null && precoPromocional > 0
-                  ? precoPromocional
-                  : preco;
+                      <h3 className="font-semibold text-sm text-[#4A2C1D] mb-1">
+                        {produto.nome}
+                      </h3>
 
-              return (
-                <div
-                  key={produto.id}
-                  className="bg-white rounded-lg shadow-sm border border-[#EFE7DE] p-4 flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="h-40 rounded-md mb-3 overflow-hidden bg-[#EFE7DE]">
-                      <img
-                        src={produto.imagem}
-                        alt={produto.nome}
-                        className="w-full h-full object-cover"
-                      />
+                      <p className="text-[#C94A67] font-bold text-sm mb-4">
+                        {precoFinal.toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL',
+                        })}
+                      </p>
                     </div>
 
-                    <h3 className="font-semibold text-sm mb-1">
-                      {produto.nome}
-                    </h3>
-
-                    <p className="text-[#C94A67] font-bold text-sm mb-4">
-                      {precoFinal.toLocaleString('pt-BR', {
-                        style: 'currency',
-                        currency: 'BRL',
-                      })}
-                    </p>
+                    <Link
+                      href={`/produto/${produto.slug}`}
+                      className="block text-center w-full bg-[#3D2C1E] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#2A1E14] transition"
+                    >
+                      Ver produto
+                    </Link>
                   </div>
+                );
+              })}
+            </div>
+          )}
 
-                  <Link
-                    href={`/produto/${produto.slug}`}
-                    className="block text-center w-full bg-[#3D2C1E] text-white py-2 rounded text-sm font-medium hover:bg-[#2A1E14]"
-                  >
-                    Ver produto
-                  </Link>
-                </div>
-              );
-            })}
-          </div>
-        )}
+        </div>
       </section>
 
       
       {/* Categorias */}
-      <section id="categorias" className="border-y border-[#F0E0D0] bg-[#FFF3E3]">
+      <section id="categorias" className="max-w-7xl mx-auto px-8 py-12">
         <div className="mx-auto max-w-7xl px-6 py-14 md:px-8">
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             <div>

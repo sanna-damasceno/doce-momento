@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import Image from 'next/image';
 
 export default function Navbar() {
   const [usuarioLogado, setUsuarioLogado] = useState(false);
@@ -81,16 +82,20 @@ export default function Navbar() {
   return (
     <>
       <div className="bg-[#3D2C1E] text-white py-2 px-4 text-center text-xs">
-        Frete grátis em compras acima de R$ 150 | Entrega em até 24h
+        Encomendas com antecedência de 3 dias
       </div>
 
       <header className="border-b border-[#EFE7DE] bg-white py-4 px-6">
         <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <div className="bg-[#C94A67] text-white font-bold w-8 h-8 rounded-full flex items-center justify-center">
-              D
-            </div>
-
+          <Link href="/" className="flex items-center shrink-0">
+            <Image
+              src="/images/logo-doce-momento.jpg"
+              alt="Doce Momento"
+              width={180}
+              height={60}
+              priority
+              className="h-14 w-auto object-contain"
+            />
             <span className="font-serif text-xl font-bold text-[#3D2C1E]">
               Doce Momento
             </span>
