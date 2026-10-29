@@ -13,7 +13,7 @@ interface Order {
   payment_type: string;
   delivery_date: string;
   created_at: string;
-  delivery_address?: string;
+  shipping_address: string;
   shipping_fee?: number;
 }
 
@@ -35,6 +35,29 @@ function isPaymentConfirmed(paymentStatus: string | null | undefined) {
     'pago / em preparo',
       'aprovado'
   ].includes(status);
+}
+
+function formatPaymentType(paymentType: string | null | undefined) {
+  const type = String(paymentType || '').trim().toLowerCase();
+
+  switch (type) {
+    case 'credit_card':
+      return 'Cartão de Crédito';
+
+    case 'pix':
+      return 'PIX';
+
+    default:
+      return paymentType || 'Não informado';
+  }
+}
+
+function formatDeliveryDate(date: string) {
+  if (!date) return '';
+
+  const [year, month, day] = date.slice(0, 10).split('-');
+
+  return `${day}/${month}/${year}`;
 }
 
 export default function MeusPedidosPage() {
@@ -173,10 +196,10 @@ export default function MeusPedidosPage() {
                       </span>
                     </div>
                     <p className="text-xs text-gray-500">
-                      Data: {new Date(order.created_at).toLocaleDateString('pt-BR')} | Entrega: {order.delivery_date}
+                      Data: {new Date(order.created_at).toLocaleDateString('pt-BR')} | Entrega: {String(order.delivery_date).slice(0, 10).split('-').reverse().join('/')}
                     </p>
                     <p className="text-xs text-gray-600">
-                      Pagamento: <span className="uppercase font-semibold">{order.payment_type || 'N/A'}</span> ({order.payment_status})
+                      Pagamento: <span className="uppercase font-semibold">{formatPaymentType(order.payment_type)} </span> ({order.payment_status})
                     </p>
                   </div>
 
@@ -226,12 +249,10 @@ export default function MeusPedidosPage() {
             <div className="space-y-3 text-sm text-gray-600 mb-6 border-b pb-4">
               <p><strong>Estado do Pedido:</strong> {selectedOrder.status}</p>
               <p><strong>Estado do Pagamento:</strong> {selectedOrder.payment_status}</p>
-              <p><strong>Forma de Pagamento:</strong> {selectedOrder.payment_type || 'N/A'}</p>
+              <p><strong>Forma de Pagamento:</strong> {formatPaymentType(selectedOrder.payment_type)}</p>
               <p><strong>Data do Pedido:</strong> {new Date(selectedOrder.created_at).toLocaleString('pt-BR')}</p>
-              <p><strong>Previsão de Entrega:</strong> {selectedOrder.delivery_date}</p>
-              {selectedOrder.delivery_address && (
-                <p><strong>Endereço de Entrega:</strong> {selectedOrder.delivery_address}</p>
-              )}
+              <p><strong>Previsão de Entrega:</strong> {formatDeliveryDate(selectedOrder.delivery_date)}</p>
+              <p><strong>Endereço de Entrega:</strong> {selectedOrder.shipping_address}</p>
             </div>
 
             <h3 className="font-bold text-[#3D2314] mb-2 text-sm">Itens do Pedido:</h3>
