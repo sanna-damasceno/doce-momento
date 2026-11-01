@@ -16,6 +16,9 @@ export default function Navbar() {
   if (pathname.startsWith('/admin')) {
     return null;
     }
+  if (pathname.startsWith('/api-docs')) {
+    return null;
+    }
 
   useEffect(() => {
     let ativo = true;
