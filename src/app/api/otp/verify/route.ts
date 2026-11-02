@@ -55,7 +55,11 @@ export async function POST(request: Request) {
     if (inputCodeHash !== otpRecord.code_hash) {
       // Incrementar contador de tentativas falhadas na base de dados
       await query(
-        'UPDATE otps SET attempts = attempts + 1 WHERE id = $1;',
+        `
+          UPDATE otps
+          SET attempts = attempts + 1
+          WHERE id = $1;
+        `,
         [otpRecord.id]
       );
 
@@ -69,8 +73,14 @@ export async function POST(request: Request) {
     }
 
     // 6. Sucesso! Marcar o OTP como utilizado
+// 6. Sucesso! Marcar o OTP como utilizado e registrar a verificação
     await query(
-      'UPDATE otps SET used = TRUE WHERE id = $1;',
+      `
+        UPDATE otps
+        SET used = TRUE,
+            verified_at = CURRENT_TIMESTAMP
+        WHERE id = $1;
+      `,
       [otpRecord.id]
     );
 
@@ -81,7 +91,6 @@ export async function POST(request: Request) {
       },
       { status: 200 }
     );
-
   } catch (error) {
     console.error('Erro ao verificar OTP:', error);
     return NextResponse.json(
