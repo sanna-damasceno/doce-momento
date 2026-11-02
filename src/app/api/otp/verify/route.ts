@@ -4,23 +4,64 @@ import crypto from 'crypto';
 
 export async function POST(request: Request) {
   try {
-    const { email, code } = await request.json();
+    // 1. Ler os dados recebidos
+    let body;
 
-    if (!email || !code) {
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        { error: 'Dados inválidos.' },
+        { status: 400 }
+      );
+    }
+
+    const { email, code } = body;
+
+    // 2. Validar os campos
+    if (
+      typeof email !== 'string' ||
+      typeof code !== 'string' ||
+      !email.trim() ||
+      !code.trim()
+    ) {
       return NextResponse.json(
         { error: 'E-mail e código são obrigatórios.' },
         { status: 400 }
       );
     }
 
-    // 1. Procurar o último OTP gerado para este e-mail que ainda não foi marcado como usado
+    // 3. Normalizar o e-mail
+    const normalizedEmail = email.trim().toLowerCase();
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(normalizedEmail)) {
+      return NextResponse.json(
+        { error: 'Informe um e-mail válido.' },
+        { status: 400 }
+      );
+    }
+
+    // 4. Validar o formato do código
+    if (!/^\d{6}$/.test(code)) {
+      return NextResponse.json(
+        { error: 'O código deve conter exatamente 6 dígitos.' },
+        { status: 400 }
+      );
+    }
+
+    // 5. Buscar o último código não utilizado
     const selectQuery = `
-      SELECT * FROM otps 
-      WHERE email = $1 AND used = FALSE 
-      ORDER BY created_at DESC 
+      SELECT *
+      FROM public.otps
+      WHERE LOWER(TRIM(email)) = $1
+        AND used = FALSE
+      ORDER BY created_at DESC
       LIMIT 1;
     `;
-    const result = await query(selectQuery, [email]);
+
+    const result = await query(selectQuery, [normalizedEmail]);
 
     if (result.rows.length === 0) {
       return NextResponse.json(
@@ -31,52 +72,68 @@ export async function POST(request: Request) {
 
     const otpRecord = result.rows[0];
 
-    // 2. Verificar limite de tentativas (ex: máximo de 3 tentativas)
+    // 6. Verificar o limite de tentativas
     if (otpRecord.attempts >= 3) {
       return NextResponse.json(
-        { error: 'Limite de tentativas excedido. Solicite um novo código.' },
+        {
+          error: 'Limite de tentativas excedido. Solicite um novo código.'
+        },
         { status: 403 }
       );
     }
 
-    // 3. Verificar expiração temporal
+    // 7. Verificar a expiração do código
     const now = new Date();
-    if (new Date(otpRecord.expires_at) < now) {
+
+    if (new Date(otpRecord.expires_at).getTime() <= now.getTime()) {
       return NextResponse.json(
         { error: 'O código expirou. Por favor, solicite um novo.' },
         { status: 410 }
       );
     }
 
-    // 4. Calcular o hash do código recebido para comparação
-    const inputCodeHash = crypto.createHash('sha256').update(code.toString()).digest('hex');
+    // 8. Gerar o hash do código recebido
+    const inputCodeHash = crypto
+      .createHash('sha256')
+      .update(code)
+      .digest('hex');
 
-    // 5. Comparar os hashes
-    if (inputCodeHash !== otpRecord.code_hash) {
-      // Incrementar contador de tentativas falhadas na base de dados
+    // 9. Comparar os hashes de maneira segura
+    const inputBuffer = Buffer.from(inputCodeHash, 'hex');
+    const storedBuffer = Buffer.from(otpRecord.code_hash, 'hex');
+
+    const isValid =
+      inputBuffer.length === storedBuffer.length &&
+      crypto.timingSafeEqual(inputBuffer, storedBuffer);
+
+    if (!isValid) {
+      // Incrementar tentativas incorretas
       await query(
         `
-          UPDATE otps
+          UPDATE public.otps
           SET attempts = attempts + 1
           WHERE id = $1;
         `,
         [otpRecord.id]
       );
 
-      const remainingAttempts = 3 - (otpRecord.attempts + 1);
+      const remainingAttempts = Math.max(
+        0,
+        3 - (otpRecord.attempts + 1)
+      );
+
       return NextResponse.json(
-        { 
-          error: `Código incorreto. Restam ${Math.max(0, remainingAttempts)} tentativa(s).` 
+        {
+          error: `Código incorreto. Restam ${remainingAttempts} tentativa(s).`
         },
         { status: 400 }
       );
     }
 
-    // 6. Sucesso! Marcar o OTP como utilizado
-// 6. Sucesso! Marcar o OTP como utilizado e registrar a verificação
+    // 10. Marcar o código como utilizado e registrar a verificação
     await query(
       `
-        UPDATE otps
+        UPDATE public.otps
         SET used = TRUE,
             verified_at = CURRENT_TIMESTAMP
         WHERE id = $1;
@@ -87,12 +144,14 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: true,
-        message: 'Código validado com sucesso! Autenticação concluída.'
+        message: 'Código validado com sucesso!'
       },
       { status: 200 }
     );
+
   } catch (error) {
     console.error('Erro ao verificar OTP:', error);
+
     return NextResponse.json(
       { error: 'Erro interno no servidor.' },
       { status: 500 }

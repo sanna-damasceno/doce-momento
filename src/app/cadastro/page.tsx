@@ -32,11 +32,52 @@ export default function RegisterPage() {
   };
 
   // Passo 1: Validar dados, verificar e-mail e enviar OTP
+
   const handleStartRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (formData.password !== formData.confirmPassword) {
+    const name = formData.name.trim();
+    const email = formData.email.trim().toLowerCase();
+    const phone = formData.phone.trim();
+    const password = formData.password;
+    const confirmPassword = formData.confirmPassword;
+
+    // 1. Verificar campos obrigatórios
+    if (!name || !email || !phone || !password || !confirmPassword) {
+      setError('Preencha todos os campos obrigatórios.');
+      return;
+    }
+
+    // 2. Validar nome
+    if (name.length < 2 || name.length > 100) {
+      setError('O nome deve ter entre 2 e 100 caracteres.');
+      return;
+    }
+
+    // 3. Validar e-mail
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(email)) {
+      setError('Informe um endereço de e-mail válido.');
+      return;
+    }
+
+    // 4. Validar telefone
+    const phoneDigits = phone.replace(/\D/g, '');
+
+    if (phoneDigits.length !== 10 && phoneDigits.length !== 11) {
+      setError('Informe um telefone válido com DDD.');
+      return;
+    }
+
+    // 5. Validar senha
+    if (password.length < 6) {
+      setError('A senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
       setError('As senhas não coincidem.');
       return;
     }
@@ -44,35 +85,53 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
-      // 1. Validar e iniciar registo
+      // 6. Enviar dados para o backend
+      const registerData = {
+        name,
+        email,
+        phone,
+        password,
+        confirmPassword,
+      };
+
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...formData, action: 'INIT_REGISTER' }),
+        body: JSON.stringify({
+          ...registerData,
+          action: 'INIT_REGISTER',
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Ocorreu um erro ao registar.');
-        setLoading(false);
+        setError(data.error || 'Ocorreu um erro ao registrar.');
         return;
       }
 
-      // 2. Enviar o código OTP
+      // 7. Solicitar código OTP
       const otpResponse = await fetch('/api/otp/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email }),
+        body: JSON.stringify({ email }),
       });
 
       const otpData = await otpResponse.json();
 
       if (otpResponse.ok) {
+        setFormData({
+          ...formData,
+          name,
+          email,
+          phone,
+        });
+
         setStep('verify');
       } else {
         setError(otpData.error || 'Erro ao enviar o código de verificação.');
       }
+
     } catch {
       setError('Erro de conexão com o servidor.');
     } finally {
