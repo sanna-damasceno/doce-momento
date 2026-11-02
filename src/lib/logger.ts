@@ -1,6 +1,7 @@
 export async function sendDiscordAlert(message: string) {
   const webhookUrl = process.env.DISCORD_WEBHOOK_URL;
   if (!webhookUrl) return;
+  // Teste de Pull Request e GitHub Actions
 
   try {
     await fetch(webhookUrl, {
