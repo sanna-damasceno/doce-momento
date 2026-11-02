@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
+import { cookies } from 'next/headers';
 
 interface OrderItem {
   product_name: string;
@@ -33,6 +34,45 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as OrderRequest;
 
+    // 1. Verificar se o usuário está autenticado
+    const cookieStore = await cookies();
+    const userId = cookieStore.get('user_id')?.value;
+
+    if (!userId || !/^\d+$/.test(userId)) {
+      return NextResponse.json(
+        { error: 'Você precisa estar autenticado para realizar uma compra.' },
+        { status: 401 }
+      );
+    }
+
+    // 2. Consultar o usuário no banco de dados
+    const userResult = await query(
+      `
+        SELECT id, email, email_verified
+        FROM public.users
+        WHERE id = $1;
+      `,
+      [userId]
+    );
+
+    if (userResult.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Usuário não encontrado. Faça login novamente.' },
+        { status: 401 }
+      );
+    }
+
+    const authenticatedUser = userResult.rows[0];
+
+    // 3. Verificar se o e-mail foi validado
+    if (authenticatedUser.email_verified !== true) {
+      return NextResponse.json(
+        {
+          error: 'Seu e-mail ainda não foi verificado. Verifique seu cadastro antes de comprar.'
+        },
+        { status: 403 }
+      );
+    }
     const {
       customer_name,
       customer_email,
@@ -48,12 +88,25 @@ export async function POST(request: Request) {
       payment_type,
     } = body;
 
+    if (
+      !customer_email ||
+      customer_email.trim().toLowerCase() !==
+        authenticatedUser.email.trim().toLowerCase()
+    ) {
+      return NextResponse.json(
+        { error: 'O e-mail do pedido deve ser o mesmo da sua conta.' },
+        { status: 403 }
+      );
+    }
+
     if (!customer_email || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json(
         { error: 'Dados incompletos para criar o pedido.' },
         { status: 400 }
       );
     }
+
+
 
     const deliveryDate = String(delivery_date || '');
     const [year, month, day] = deliveryDate.split('-').map(Number);
