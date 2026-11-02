@@ -1,7 +1,8 @@
-import Link from 'next/link';
+import Image from 'next/image';
 import { Pool } from 'pg';
 import { notFound } from 'next/navigation';
 import BotaoComprarModal from './BotaoComprarModal';
+
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -44,7 +45,13 @@ export default async function DetalheProdutoPage({ params }: PageProps) {
           {/* Imagem do Produto */}
           <div>
             <div className="w-full h-80 md:h-96 bg-gray-100 rounded-xl overflow-hidden shadow-inner">
-              <img src={produto.imagem} alt={produto.nome} className="w-full h-full object-cover" />
+              <Image
+                src={produto.imagem}
+                alt={produto.nome}
+                width={600}
+                height={400}
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
 

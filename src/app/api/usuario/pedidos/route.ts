@@ -1,3 +1,4 @@
+
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { query } from '@/lib/db';
@@ -9,13 +10,24 @@ export async function GET(request: Request) {
     const userId = cookieStore.get('user_id')?.value;
 
     if (!userId) {
-      return NextResponse.json({ success: false, error: 'Não autorizado.' }, { status: 401 });
+      return NextResponse.json(
+        { success: false, error: 'Não autorizado.' },
+        { status: 401 }
+      );
     }
 
-    const userResult = await query('SELECT email FROM users WHERE id = $1', [userId]);
+    const userResult = await query(
+      'SELECT email FROM users WHERE id = $1',
+      [userId]
+    );
+
     if (userResult.rows.length === 0) {
-      return NextResponse.json({ success: false, error: 'Utilizador não encontrado.' }, { status: 404 });
+      return NextResponse.json(
+        { success: false, error: 'Utilizador não encontrado.' },
+        { status: 404 }
+      );
     }
+
     const userEmail = userResult.rows[0].email;
 
     const { searchParams } = new URL(request.url);
@@ -23,74 +35,119 @@ export async function GET(request: Request) {
 
     // Se um ID específico foi fornecido, retorna os detalhes do pedido e os seus itens
     if (orderId) {
-      const orderQuery = await query(`
-        SELECT 
-          id, 
-          customer_name, 
-          customer_email, 
-          customer_phone,
-          shipping_address,
-          delivery_date,
-          subtotal,
-          shipping_fee,
-          discount,
-          total_amount, 
-          status, 
-          payment_status, 
-          payment_id,
-          payment_type, 
-          notes,
-          created_at 
-        FROM orders 
-        WHERE id = $1 AND customer_email = $2
-      `, [orderId, userEmail]);
+      const orderQuery = await query(
+        `
+          SELECT
+            id,
+            customer_name,
+            customer_email,
+            customer_phone,
+            shipping_address,
+            delivery_date,
+            subtotal,
+            shipping_fee,
+            discount,
+            total_amount,
+            status,
+            payment_status,
+            payment_id,
+            payment_type,
+            notes,
+            created_at
+          FROM orders
+          WHERE id = $1 AND customer_email = $2
+        `,
+        [orderId, userEmail]
+      );
 
       if (orderQuery.rows.length === 0) {
-        return NextResponse.json({ success: false, error: 'Pedido não encontrado.' }, { status: 404 });
+        return NextResponse.json(
+          { success: false, error: 'Pedido não encontrado.' },
+          { status: 404 }
+        );
       }
 
       const order = orderQuery.rows[0];
 
-      // Tenta buscar os itens do pedido (caso tenha uma tabela de itens relacional, ex: order_items ou items)
-      // Se a sua tabela tiver outro nome, ajuste aqui. Caso guarde os itens num campo JSON, ajuste conforme necessário.
-      let items = [];
+      type OrderItem = {
+        id: number;
+        product_name: string;
+        quantity: number;
+        unit_price: number;
+        price: number;
+        customization: string | null;
+        created_at: Date;
+      };
+
+      // Tenta buscar os itens relacionados ao pedido
+      let items: OrderItem[] = [];
+
       try {
-        const itemsQuery = await query(`
-          SELECT 
-            id, 
-            product_name, 
-            quantity, 
-            unit_price, 
-            unit_price AS price, 
-            customization,
-            created_at
-          FROM order_items 
-          WHERE order_id = $1
-        `, [orderId]);
+        const itemsQuery = await query<OrderItem>(
+          `
+            SELECT
+              id,
+              product_name,
+              quantity,
+              unit_price,
+              unit_price AS price,
+              customization,
+              created_at
+            FROM order_items
+            WHERE order_id = $1
+          `,
+          [orderId]
+        );
+
         items = itemsQuery.rows;
-      } catch (e) {
+      } catch {
         items = [];
       }
 
-      return NextResponse.json({ success: true, order, items }, { status: 200 });
+      return NextResponse.json(
+        { success: true, order, items },
+        { status: 200 }
+      );
     }
 
     // Caso contrário, lista todos os pedidos do utilizador
-    const result = await query(`
-      SELECT id, customer_name, customer_email, total_amount, status, payment_status, payment_type, delivery_date, created_at, shipping_fee 
-      FROM orders 
-      WHERE customer_email = $1 
-      ORDER BY created_at DESC;
-    `, [userEmail]);
+    const result = await query(
+      `
+        SELECT
+          id,
+          customer_name,
+          customer_email,
+          total_amount,
+          status,
+          payment_status,
+          payment_type,
+          delivery_date,
+          created_at,
+          shipping_fee
+        FROM orders
+        WHERE customer_email = $1
+        ORDER BY created_at DESC;
+      `,
+      [userEmail]
+    );
 
-    return NextResponse.json({ success: true, orders: result.rows }, { status: 200 });
+    return NextResponse.json(
+      { success: true, orders: result.rows },
+      { status: 200 }
+    );
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Erro ao buscar pedidos:', error);
-    return NextResponse.json({ success: false, error: 'Erro interno ao processar a requisição.' }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Erro interno ao processar a requisição.'
+      },
+      { status: 500 }
+    );
   }
 }
-
 
 export async function PATCH(request: Request) {
   try {
@@ -137,7 +194,7 @@ export async function PATCH(request: Request) {
             payment_status = 'Cancelado'
         WHERE id = $1
           AND customer_email = $2
-          AND LOWER(TRIM(COALESCE(payment_status, ''))) 
+          AND LOWER(TRIM(COALESCE(payment_status, '')))
               NOT IN ('pago', 'paid', 'confirmed', 'approved')
           AND LOWER(TRIM(COALESCE(status, ''))) <> 'cancelado'
         RETURNING id
@@ -164,6 +221,7 @@ export async function PATCH(request: Request) {
       }
 
       const order = orderCheck.rows[0];
+
       const paymentStatus = String(order.payment_status || '')
         .trim()
         .toLowerCase();
@@ -188,7 +246,10 @@ export async function PATCH(request: Request) {
       }
 
       return NextResponse.json(
-        { success: false, error: 'Não foi possível cancelar o pedido.' },
+        {
+          success: false,
+          error: 'Não foi possível cancelar o pedido.'
+        },
         { status: 400 }
       );
     }
@@ -200,7 +261,8 @@ export async function PATCH(request: Request) {
       },
       { status: 200 }
     );
-  } catch (error) {
+
+  } catch (error: unknown) {
     console.error('Erro ao cancelar pedido:', error);
 
     return NextResponse.json(

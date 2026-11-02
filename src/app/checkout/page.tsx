@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+
 
 interface ItemCarrinho {
   carrinho_item_id: number;

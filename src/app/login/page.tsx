@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function LoginPage() {
         const data = await response.json();
 
         if (response.ok) {
-            // 👇 ADICIONE ESTAS LINHAS PARA SALVAR A SESSÃO NO LOCALSTORAGE
+
             // (Certifique-se de que a sua API de login devolve o nome do utilizador, por exemplo: data.user.name)
             localStorage.setItem('userName', data.user?.name || 'Cliente');
             
@@ -44,7 +45,7 @@ export default function LoginPage() {
         } else {
             setError(data.error || 'E-mail ou senha incorretos.');
         }
-        } catch (err) {
+        } catch {
         setError('Erro de conexão com o servidor.');
         } finally {
         setLoading(false);
@@ -61,10 +62,12 @@ export default function LoginPage() {
           {/* Lado Esquerdo: Imagem com caixa de doces */}
 
           <div className="relative hidden min-h-[600px] overflow-hidden bg-[#F4EBE1] md:block">
-            <img
+            <Image
               src="/images/login.jpg"
               alt="Caixa de doces artesanais da Doce Momento"
-              className="absolute inset-0 h-full w-full object-cover object-center"
+              fill
+              priority
+              className="object-cover object-center"
             />
           </div>
 

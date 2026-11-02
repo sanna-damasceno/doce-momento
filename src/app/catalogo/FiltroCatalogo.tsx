@@ -1,8 +1,9 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import Image from 'next/image';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 type Produto = {
   id: number;
@@ -22,18 +23,29 @@ type Props = {
 
 export default function FiltroCatalogo({ produtos }: Props) {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const router = useRouter();
 
-  const [categoriaSelecionada, setCategoriaSelecionada] = useState('Todas');
+  // A categoria selecionada vem diretamente da URL
+  const categoriaSelecionada = searchParams.get('categoria') || 'Todas';
 
-  useEffect(() => {
-    const categoriaURL = searchParams.get('categoria');
+  // Atualiza a categoria na URL
+  function selecionarCategoria(categoria: string) {
+    const params = new URLSearchParams(searchParams.toString());
 
-    if (categoriaURL) {
-      setCategoriaSelecionada(categoriaURL);
+    if (categoria === 'Todas') {
+      params.delete('categoria');
     } else {
-      setCategoriaSelecionada('Todas');
+      params.set('categoria', categoria);
     }
-  }, [searchParams]);
+
+    const queryString = params.toString();
+
+    router.replace(
+      queryString ? `${pathname}?${queryString}` : pathname,
+      { scroll: false }
+    );
+  }
 
   // Busca as categorias que realmente existem nos produtos
   const categorias = Array.from(
@@ -67,7 +79,7 @@ export default function FiltroCatalogo({ produtos }: Props) {
           <li>
             <button
               type="button"
-              onClick={() => setCategoriaSelecionada('Todas')}
+              onClick={() => selecionarCategoria('Todas')}
               className={`text-left ${
                 categoriaSelecionada === 'Todas'
                   ? 'font-semibold text-[#D9537A]'
@@ -87,7 +99,7 @@ export default function FiltroCatalogo({ produtos }: Props) {
               <li key={categoria}>
                 <button
                   type="button"
-                  onClick={() => setCategoriaSelecionada(categoria)}
+                  onClick={() => selecionarCategoria(categoria)}
                   className={`text-left ${
                     categoriaSelecionada === categoria
                       ? 'font-semibold text-[#D9537A]'
@@ -114,7 +126,7 @@ export default function FiltroCatalogo({ produtos }: Props) {
           {categoriaSelecionada !== 'Todas' && (
             <button
               type="button"
-              onClick={() => setCategoriaSelecionada('Todas')}
+              onClick={() => selecionarCategoria('Todas')}
               className="text-xs text-[#D9537A] hover:underline"
             >
               Limpar filtro
@@ -146,23 +158,25 @@ export default function FiltroCatalogo({ produtos }: Props) {
                   className="bg-white rounded-xl border border-[#EFE7DE] overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between"
                 >
                   <div>
-                    <a
+                    <Link
                       href={`/catalogo/${prod.slug}`}
-                      className="block h-48 bg-gray-100 overflow-hidden"
+                      className="relative block h-48 bg-gray-100 overflow-hidden"
                     >
-                      <img
+                      <Image
                         src={prod.imagem}
                         alt={prod.nome}
-                        className="w-full h-full object-cover hover:scale-105 transition duration-300"
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover hover:scale-105 transition duration-300"
                       />
-                    </a>
+                    </Link>
 
                     <div className="p-4">
-                      <a href={`/catalogo/${prod.slug}`}>
+                      <Link href={`/catalogo/${prod.slug}`}>
                         <h3 className="font-serif font-bold text-sm text-[#3D2314] line-clamp-1 hover:text-[#D9537A] transition">
                           {prod.nome}
                         </h3>
-                      </a>
+                      </Link>
 
                       <p className="text-[11px] text-gray-500 mt-1 line-clamp-2">
                         {prod.descricao_curta}
@@ -174,6 +188,7 @@ export default function FiltroCatalogo({ produtos }: Props) {
                             <span className="text-xs text-gray-400 line-through">
                               R$ {preco.toFixed(2).replace('.', ',')}
                             </span>
+
                             <span className="text-sm font-bold text-[#D9537A]">
                               R$ {promocional!.toFixed(2).replace('.', ',')}
                             </span>
@@ -188,12 +203,12 @@ export default function FiltroCatalogo({ produtos }: Props) {
                   </div>
 
                   <div className="p-4 pt-0">
-                    <a
+                    <Link
                       href={`/catalogo/${prod.slug}`}
                       className="block w-full text-center bg-[#3D2314] hover:bg-[#2A180E] text-white text-xs py-2 rounded font-medium transition"
                     >
                       Ver produto
-                    </a>
+                    </Link>
                   </div>
                 </div>
               );

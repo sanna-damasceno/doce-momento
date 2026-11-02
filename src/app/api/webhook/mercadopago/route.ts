@@ -1,17 +1,63 @@
+
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import nodemailer from 'nodemailer';
 
-const client = new MercadoPagoConfig({ 
-  accessToken: process.env.MP_ACCESS_TOKEN || '' 
+// Tipos dos dados recebidos e consultados
+type WebhookBody = {
+  type?: string;
+  topic?: string;
+  resource?: string;
+  data?: {
+    id?: string | number;
+  };
+};
+
+type OrderEmailData = {
+  id: number;
+  customer_name: string;
+  customer_email: string;
+  shipping_address: string;
+  delivery_date: string | Date | null;
+  subtotal: number | string;
+  shipping_fee: number | string;
+  discount: number | string | null;
+  total_amount: number | string;
+  status: string;
+  payment_status: string;
+  payment_type: string | null;
+  notes: string | null;
+  created_at: string | Date;
+};
+
+type OrderItem = {
+  product_name: string;
+  quantity: number;
+  unit_price: number | string;
+  customization: string | null;
+};
+
+// Verifica se um erro possui propriedades de resposta da API
+function isErrorWithDetails(
+  error: unknown
+): error is { status?: number; message?: string } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    ('status' in error || 'message' in error)
+  );
+}
+
+const client = new MercadoPagoConfig({
+  accessToken: process.env.MP_ACCESS_TOKEN || '',
 });
 
 export async function POST(request: Request) {
   try {
     const url = new URL(request.url);
-    const body = await request.json();
+    const body = (await request.json()) as WebhookBody;
 
     console.log('Webhook recebido:', JSON.stringify(body));
 
@@ -33,8 +79,10 @@ export async function POST(request: Request) {
       eventType,
       paymentId,
     });
+
     if (eventType !== 'payment' || !paymentId) {
       console.log('Notificação ignorada:', { eventType, paymentId });
+
       return NextResponse.json({ received: true });
     }
 
@@ -50,17 +98,24 @@ export async function POST(request: Request) {
       paymentInfo = await paymentClient.get({
         id: String(paymentId),
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorDetails = isErrorWithDetails(error) ? error : null;
+
       console.error('Erro ao consultar pagamento:', {
         paymentId,
-        status: error?.status,
-        message: error?.message,
+        status: errorDetails?.status,
+        message: errorDetails?.message,
       });
 
       // O ID 123456 da simulação pode não existir na API.
       // Não aprovar nem atualizar nenhum pedido nesse caso.
-      if (String(paymentId) === '123456' && error?.status === 404) {
-        console.log('Simulação recebida: ID fictício, nenhuma atualização realizada.');
+      if (
+        String(paymentId) === '123456' &&
+        errorDetails?.status === 404
+      ) {
+        console.log(
+          'Simulação recebida: ID fictício, nenhuma atualização realizada.'
+        );
 
         return NextResponse.json({
           received: true,
@@ -99,40 +154,40 @@ export async function POST(request: Request) {
            status = $2,
            updated_at = NOW()
        WHERE id = $3
-          AND payment_status IS DISTINCT FROM $1
-          RETURNING id`,
+         AND payment_status IS DISTINCT FROM $1
+       RETURNING id`,
       ['aprovado', 'Pago / Em Preparo', externalReference]
     );
 
     if (updateResult.rowCount === 0) {
       const orderCheck = await query(
         `SELECT id, payment_status
-        FROM orders
-        WHERE id = $1`,
+         FROM orders
+         WHERE id = $1`,
         [externalReference]
       );
 
       if (orderCheck.rows.length === 0) {
         throw new Error(
           `Nenhum pedido encontrado com ID ${externalReference}`
-        );  
-    }
+        );
+      }
 
-    console.log(
-      `Pedido ${externalReference} já estava aprovado. Nenhuma atualização necessária`
-    );
+      console.log(
+        `Pedido ${externalReference} já estava aprovado. Nenhuma atualização necessária`
+      );
 
       return NextResponse.json({
-      received: true,
-      alreadyApproved: true,
-    });
-  }
+        received: true,
+        alreadyApproved: true,
+      });
+    }
 
-  console.log(`Pedido ${externalReference} atualizado para Pago`);
+    console.log(`Pedido ${externalReference} atualizado para Pago`);
 
-  // Buscar os dados do pedido para enviar o e-mail
-  const orderResult = await query(
-    `SELECT
+    // Buscar os dados do pedido para enviar o e-mail
+    const orderResult = await query<OrderEmailData>(
+      `SELECT
          id,
          customer_name,
          customer_email,
@@ -149,15 +204,15 @@ export async function POST(request: Request) {
          created_at
        FROM orders
        WHERE id = $1`,
-    [externalReference]
-  );
+      [externalReference]
+    );
 
-  if (orderResult.rows.length === 0) {
+    if (orderResult.rows.length === 0) {
       throw new Error(`Pedido ${externalReference} não encontrado`);
     }
 
-  // Buscar os produtos do pedido
-    const itemsResult = await query(
+    // Buscar os produtos do pedido
+    const itemsResult = await query<OrderItem>(
       `SELECT product_name, quantity, unit_price, customization
        FROM order_items
        WHERE order_id = $1
@@ -170,31 +225,39 @@ export async function POST(request: Request) {
       itemsResult.rows
     );
 
-  return NextResponse.json({ received: true });
-  } catch (error) {
+    return NextResponse.json({ received: true });
+
+  } catch (error: unknown) {
     console.error('Erro real no webhook:', error);
 
     // Permite identificar falhas e possibilita novas tentativas
     return NextResponse.json(
-      { received: false, error: 'Falha ao processar pagamento' },
+      {
+        received: false,
+        error: 'Falha ao processar pagamento',
+      },
       { status: 500 }
     );
   }
 }
 
-
-
-async function sendConfirmationEmail(order: any, items: any[]) {
+async function sendConfirmationEmail(
+  order: OrderEmailData,
+  items: OrderItem[]
+) {
   const formatMoney = (value: number | string) =>
     Number(value).toLocaleString('pt-BR', {
       style: 'currency',
       currency: 'BRL',
     });
 
-  const formatDate = (value: string | Date) =>
-    new Date(value).toLocaleDateString('pt-BR', {
+  const formatDate = (value: string | Date | null) => {
+    if (!value) return 'Não informado';
+
+    return new Date(value).toLocaleDateString('pt-BR', {
       timeZone: 'UTC',
     });
+  };
 
   try {
     // Gerar o PDF
@@ -244,6 +307,7 @@ async function sendConfirmationEmail(order: any, items: any[]) {
       const itemTotal = quantity * unitPrice;
 
       drawLine(`${quantity}x ${item.product_name}`, true);
+
       drawLine(
         `Valor unitario: ${formatMoney(unitPrice)} | Total: ${formatMoney(itemTotal)}`
       );
@@ -324,7 +388,8 @@ async function sendConfirmationEmail(order: any, items: any[]) {
     });
 
     console.log(`E-mail com PDF enviado para ${order.customer_email}`);
-  } catch (emailError) {
+
+  } catch (emailError: unknown) {
     console.error('Erro ao gerar PDF ou enviar e-mail:', emailError);
   }
 }

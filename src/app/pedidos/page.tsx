@@ -90,7 +90,37 @@ export default function MeusPedidosPage() {
   };
 
   useEffect(() => {
-    fetchOrders();
+    let ativo = true;
+
+    async function carregarPedidos() {
+      try {
+        const res = await fetch('/api/usuario/pedidos');
+        const data = await res.json();
+
+        if (!ativo) return;
+
+        if (data.success) {
+          setOrders(data.orders);
+        } else {
+          setError(data.error || 'Não foi possível carregar os pedidos.');
+        }
+      } catch (err) {
+        if (ativo) {
+          console.error('Erro ao buscar pedidos:', err);
+          setError('Erro de conexão ao carregar os pedidos.');
+        }
+      } finally {
+        if (ativo) {
+          setLoading(false);
+        }
+      }
+    }
+
+    carregarPedidos();
+
+    return () => {
+      ativo = false;
+    };
   }, []);
 
   // Função para abrir detalhes do pedido

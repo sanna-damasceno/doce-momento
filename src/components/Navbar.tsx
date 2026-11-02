@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Image from 'next/image';
 
 export default function Navbar() {
@@ -12,20 +11,12 @@ export default function Navbar() {
   const [userName, setUserName] = useState('');
 
   const pathname = usePathname();
-
-  if (pathname.startsWith('/admin')) {
-    return null;
-    }
-  if (pathname.startsWith('/api-docs')) {
-    return null;
-    }
+  const router = useRouter();
 
   useEffect(() => {
     let ativo = true;
 
     async function verificarLogin() {
-      setVerificandoLogin(true);
-
       try {
         const res = await fetch('/api/auth/me', {
           cache: 'no-store',
@@ -75,11 +66,16 @@ export default function Navbar() {
       setUsuarioLogado(false);
       setUserName('');
 
-      window.location.href = '/';
+      router.push('/');
     } catch (error) {
       console.error('Erro ao sair:', error);
       alert('Erro de conexão ao tentar sair da conta.');
     }
+  }
+
+  // Os retornos condicionais ficam depois de todos os Hooks.
+  if (pathname.startsWith('/admin') || pathname.startsWith('/api-docs')) {
+    return null;
   }
 
   return (
@@ -119,21 +115,15 @@ export default function Navbar() {
 
             {!verificandoLogin && usuarioLogado && (
               <>
-                <Link
-                  href="/carrinho"
-                  className="hover:text-[#C94A67]"
-                >
+                <Link href="/carrinho" className="hover:text-[#C94A67]">
                   Carrinho
                 </Link>
 
-                <Link
-                  href="/pedidos"
-                  className="hover:text-[#C94A67]"
-                >
+                <Link href="/pedidos" className="hover:text-[#C94A67]">
                   Pedidos
                 </Link>
 
-                <span className="font-semibold text-{#3D2C1E]">
+                <span className="font-semibold text-[#3D2C1E]">
                   {userName ? `Olá, ${userName}` : 'Olá!'}
                 </span>
 

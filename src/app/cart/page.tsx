@@ -44,7 +44,7 @@ export default function CartPage() {
     },
   ]);
 
-  const [deliveryDate, setDeliveryDate] = useState('Sábado, 12 de outubro');
+  const [deliveryDate] = useState('Sábado, 12 de outubro');
   const [couponCode, setCouponCode] = useState('DOCE10');
   const [discountApplied, setDiscountApplied] = useState(true);
 

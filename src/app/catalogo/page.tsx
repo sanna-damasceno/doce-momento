@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { Pool, type PoolClient } from 'pg';
 import FiltroCatalogo from './FiltroCatalogo';
 

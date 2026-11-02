@@ -2,17 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Home() {
-
-  // Estados do formulário de leads/WhatsApp
-  const [nome, setNome] = useState('');
-  const [email, setEmail] = useState('');
-  const [whatsapp, setWhatsapp] = useState('');
-  const [step, setStep] = useState<'form' | 'verify'>('form');
-  const [codigoVerificacao, setCodigoVerificacao] = useState('');
-  const [message, setMessage] = useState('');
-  const [loadingResend, setLoadingResend] = useState(false);
 
   type Produto = {
     id: number;
@@ -54,121 +46,6 @@ export default function Home() {
 
   }, []);
 
-
-
-  // 1. Submissão do formulário de contacto/cadastro
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage('');
-
-    try {
-      // Regista os dados do cliente no sistema
-      const responseLeads = await fetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nome, email, whatsapp }),
-      });
-
-      if (!responseLeads.ok) {
-        alert('Erro ao registar os seus dados.');
-        return;
-      }
-
-      // Solicita a geração e envio do código de segurança por e-mail
-      const responseOtp = await fetch('/api/otp/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      const dataOtp = await responseOtp.json();
-
-      if (responseOtp.ok) {
-        setStep('verify');
-      } else {
-        alert(dataOtp.error || 'Erro ao enviar o código de verificação.');
-      }
-    } catch (error) {
-      console.error('Erro na submissão:', error);
-      alert('Erro de conexão com o servidor.');
-    }
-  };
-
-  // Função para Reenviar o Código de Verificação
-  const handleResendOtp = async () => {
-    setLoadingResend(true);
-    setMessage('');
-    try {
-      const response = await fetch('/api/otp/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        alert('Um novo código de verificação foi enviado para o seu e-mail.');
-      } else {
-        setMessage(data.error || 'Erro ao reenviar o código.');
-      }
-    } catch (error) {
-      console.error('Erro no reenvio:', error);
-      setMessage('Erro de conexão ao reenviar o código.');
-    } finally {
-      setLoadingResend(false);
-    }
-  };
-
-  // Função para Voltar e alterar os dados
-  const handleBackToForm = () => {
-    setStep('form');
-    setCodigoVerificacao('');
-    setMessage('');
-  };
-
-
-
-  // 2. Validação do código introduzido pelo utilizador
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage('');
-
-    try {
-      const response = await fetch('/api/otp/verify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code: codigoVerificacao }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        alert('E-mail verificado com sucesso! A redirecionar para o WhatsApp...');
-
-        // Número de WhatsApp da Doce Momento
-        const numeroWhatsApp = '5592993406975'; 
-        
-        // Mensagem personalizada para o WhatsApp
-        const mensagem = encodeURIComponent(
-          `Olá! O meu nome é ${nome}, o meu e-mail é ${email} e quero saber mais novidades da Doce Momento!`
-        );
-
-        // Abre o WhatsApp numa nova aba automaticamente
-        window.open(`https://wa.me/${numeroWhatsApp}?text=${mensagem}`, '_blank');
-        
-        // Reiniciar o fluxo e limpar campos
-        setStep('form');
-        setCodigoVerificacao('');
-        setNome('');
-        setEmail('');
-        setWhatsapp('');
-      } else {
-        setMessage(data.error || 'Código incorreto ou expirado.');
-      }
-    } catch (error) {
-      console.error('Erro na verificação:', error);
-      setMessage('Erro de conexão com o servidor.');
-    }
-  };
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] text-[#4A3525] font-sans">
@@ -214,9 +91,11 @@ export default function Home() {
           </div>
 
           <div className="relative">
-            <img
+            <Image
               src="/images/destaque.jpg"
               alt="Seleção de doces artesanais da Doce Momento"
+              width={600}
+              height={440}
               className="h-[320px] w-full rounded-[2rem] object-cover shadow-lg md:h-[440px]"
             />
 
@@ -290,9 +169,11 @@ export default function Home() {
                   >
                     <div>
                       <div className="h-40 rounded-xl mb-3 overflow-hidden bg-[#EFE7DE]">
-                        <img
+                        <Image
                           src={produto.imagem}
                           alt={produto.nome}
+                          width={300}
+                          height={160}
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -385,9 +266,11 @@ export default function Home() {
                 className="group rounded-2xl border border-[#F0E0D0] bg-[#FDFBF7] p-5 transition duration-300 hover:-translate-y-1 hover:border-[#E5B6C1] hover:shadow-md"
               >
                 <div className="h-16 w-16 overflow-hidden rounded-full border-2 border-[#F0E0D0] bg-[#FCE8ED]">
-                  <img
+                  <Image
                     src={categoria.imagem}
                     alt={categoria.nome}
+                    width={64}
+                    height={64}
                     className="h-full w-full object-cover transition duration-300 group-hover:scale-110"
                   />
                 </div>
@@ -469,9 +352,11 @@ export default function Home() {
       <section id="sobre" className="bg-[#FDFBF7]">
         <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-6 py-16 md:grid-cols-2 md:px-8 md:py-20">
           <div className="relative">
-            <img
+            <Image
               src="/images/login.jpg"
               alt="Preparação artesanal dos doces da Doce Momento"
+              width={600}
+              height={420}
               className="h-80 w-full rounded-[2rem] object-cover shadow-md md:h-[420px]"
             />
 
