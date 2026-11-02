@@ -21,36 +21,55 @@ export default function LoginPage() {
       [name]: value,
     });
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        setLoading(true);
+    e.preventDefault();
+    setError('');
 
-        try {
-        const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(formData),
-        });
+    const email = formData.email.trim().toLowerCase();
+    const password = formData.password;
 
-        const data = await response.json();
+    // Verificar campos vazios
+    if (!email || !password.trim()) {
+      setError('Preencha o e-mail e a senha.');
+      return;
+    }
 
-        if (response.ok) {
+    // Verificar formato do e-mail
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-            // (Certifique-se de que a sua API de login devolve o nome do utilizador, por exemplo: data.user.name)
-            localStorage.setItem('userName', data.user?.name || 'Cliente');
-            
-            alert('Login efetuado com sucesso!');
-            router.push('/'); // Redireciona para a página inicial
-        } else {
-            setError(data.error || 'E-mail ou senha incorretos.');
-        }
-        } catch {
-        setError('Erro de conexão com o servidor.');
-        } finally {
-        setLoading(false);
-        }
-    };
+    if (!emailRegex.test(email)) {
+      setError('Informe um endereço de e-mail válido.');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('userName', data.user?.name || 'Cliente');
+
+        alert('Login efetuado com sucesso!');
+        router.push('/');
+      } else {
+        setError(data.error || 'E-mail ou senha incorretos.');
+      }
+
+    } catch {
+      setError('Erro de conexão com o servidor.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] flex flex-col justify-between p-6 font-sans">
