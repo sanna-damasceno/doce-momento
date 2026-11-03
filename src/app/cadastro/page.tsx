@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { aplicarMascaraWhatsApp } from '@/utils/mascaras';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -30,6 +31,14 @@ export default function RegisterPage() {
       [name]: value,
     });
   };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      phone: aplicarMascaraWhatsApp(e.target.value),
+    }));
+  };
+
 
   // Passo 1: Validar dados, verificar e-mail e enviar OTP
 
@@ -66,8 +75,8 @@ export default function RegisterPage() {
     // 4. Validar telefone
     const phoneDigits = phone.replace(/\D/g, '');
 
-    if (phoneDigits.length !== 10 && phoneDigits.length !== 11) {
-      setError('Informe um telefone válido com DDD.');
+    if (!/^\d{2}9\d{8}$/.test(phoneDigits)) {
+      setError('Informe um WhatsApp válido com DDD e 9 dígitos.');
       return;
     }
 
@@ -282,9 +291,11 @@ export default function RegisterPage() {
                       name="phone"
                       required
                       value={formData.phone}
-                      onChange={handleChange}
+                      onChange={handlePhoneChange}
+                      inputMode="numeric"
+                      maxLength={15}
                       className="w-full p-2 border border-gray-200 rounded text-xs focus:outline-none focus:border-[#D9537A]"
-                      placeholder="(11) 98765-4321"
+                      placeholder="(92) 99999-9999"
                     />
                   </div>
                 </div>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { aplicarMascaraWhatsApp } from '@/utils/mascaras';
 
 
 interface ItemCarrinho {
@@ -31,6 +32,7 @@ function getMinDeliveryDate() {
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const [autenticado, setAutenticado] = useState(false);
   
   const [itens, setItens] = useState<ItemCarrinho[]>([]);
   const [loadingCart, setLoadingCart] = useState(true);
@@ -55,36 +57,76 @@ export default function CheckoutPage() {
   useEffect(() => {
     async function carregarDadosIniciais() {
       try {
-        // 1. Carrega o carrinho
+        // 1. Verifica se o usuário está autenticado
+        const resUser = await fetch('/api/usuario', {
+          cache: 'no-store',
+        });
+
+        const dataUser = await resUser.json();
+
+        // Se não estiver logado, redireciona para o login
+        if (!resUser.ok || !dataUser.success || !dataUser.usuario) {
+          router.replace('/login?redirect=/checkout');
+          return;
+        }
+
+        // Usuário autenticado
+        setAutenticado(true);
+
+        // 2. Carrega os dados cadastrados do usuário
+        setFormData(prev => ({
+          ...prev,
+          customer_name: dataUser.usuario.nome || '',
+          customer_email: dataUser.usuario.email || '',
+          customer_phone: aplicarMascaraWhatsApp(
+            dataUser.usuario.telefone || ''
+          ),
+        }));
+
+        // 3. Somente depois carrega o carrinho
         const resCart = await fetch('/api/carrinho');
         const dataCart = await resCart.json();
+
         if (dataCart.success) {
           setItens(dataCart.itens);
+
           if (dataCart.itens.length === 0) {
             router.push('/carrinho');
             return;
           }
         }
-
-        // 2. Carrega os dados cadastrados do utilizador
-        const resUser = await fetch('/api/usuario');
-        const dataUser = await resUser.json();
-        if (dataUser.success && dataUser.usuario) {
-          setFormData(prev => ({
-            ...prev,
-            customer_name: dataUser.usuario.nome || '',
-            customer_email: dataUser.usuario.email || '',
-            customer_phone: dataUser.usuario.telefone || '',
-          }));
-        }
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
+        router.replace('/login');
       } finally {
         setLoadingCart(false);
       }
     }
+
     carregarDadosIniciais();
   }, [router]);
+
+  const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Remove tudo que não for número
+    let cep = e.target.value.replace(/\D/g, '');
+
+    // Limita a 8 números
+    cep = cep.slice(0, 8);
+
+    setFormData({
+      ...formData,
+      zip_code: cep,
+    });
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const whatsapp = aplicarMascaraWhatsApp(e.target.value);
+
+    setFormData(prev => ({
+      ...prev,
+      customer_phone: whatsapp,
+    }));
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -100,12 +142,24 @@ export default function CheckoutPage() {
 
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!/^\d{8}$/.test(formData.zip_code)) {
+      alert('Digite um CEP válido com exatamente 8 números.');
+      return;
+    }
+
+    // Valida o WhatsApp
+    if (!/^\(\d{2}\) 9\d{4}-\d{4}$/.test(formData.customer_phone)) {
+      alert('Digite um WhatsApp válido com DDD.');
+      return;
+    }
     setLoading(true);
 
     try {
       const fullAddress = `${formData.shipping_address}, ${formData.neighborhood}, ${formData.city} - ${formData.state}, CEP: ${formData.zip_code}`;
 
       const formattedItems = itens.map(item => ({
+        product_id: item.produto_id,
         product_name: item.nome,
         quantity: item.quantidade,
         unit_price: Number(item.preco),
@@ -151,7 +205,7 @@ export default function CheckoutPage() {
     }
   };
 
-  if (loadingCart) {
+  if (loadingCart || !autenticado) {
     return <div className="min-h-screen bg-[#FDFBF7] flex items-center justify-center text-sm text-gray-500">A carregar dados do checkout...</div>;
   }
 
@@ -207,15 +261,34 @@ export default function CheckoutPage() {
                     name="customer_phone" 
                     required 
                     value={formData.customer_phone} 
-                    onChange={handleChange} 
+                    onChange={handlePhoneChange}
+                    inputMode="numeric"
+                    maxLength={15}
                     className="w-full p-2 border rounded text-sm" 
-                    placeholder="(11) 98765-4321" 
+                    placeholder="(92) 99999-9999"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">CEP *</label>
-                  <input type="text" name="zip_code" required value={formData.zip_code} onChange={handleChange} className="w-full p-2 border rounded text-sm" placeholder="01234-567" />
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    CEP *
+                  </label>
+
+                  <input
+                    type="text"
+                    name="zip_code"
+                    required
+                    value={
+                      formData.zip_code.length > 5
+                        ? `${formData.zip_code.slice(0, 5)}-${formData.zip_code.slice(5)}`
+                        : formData.zip_code
+                    }
+                    onChange={handleCepChange}
+                    inputMode="numeric"
+                    maxLength={9}
+                    placeholder="00000-000"
+                    className="w-full p-2 border rounded text-sm"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Endereço / Rua *</label>
