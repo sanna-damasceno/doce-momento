@@ -4,6 +4,7 @@ import { query } from '@/lib/db';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 import nodemailer from 'nodemailer';
+import { sendDiscordAlert } from '@/lib/logger';
 
 // Tipos dos dados recebidos e consultados
 type WebhookBody = {
@@ -304,6 +305,10 @@ export async function POST(request: Request) {
         'Erro ao enviar evento de compra ao GA4:',
         gaError
       );
+      await sendDiscordAlert(
+        'Falha ao registrar compra no Google Analytics 4.',
+        gaError
+      );
     }
 
     await sendConfirmationEmail(
@@ -315,6 +320,11 @@ export async function POST(request: Request) {
 
   } catch (error: unknown) {
     console.error('Erro real no webhook:', error);
+
+    await sendDiscordAlert(
+      'Falha ao processar uma notificação do Mercado Pago.',
+      error
+    );
 
     // Permite identificar falhas e possibilita novas tentativas
     return NextResponse.json(
@@ -477,5 +487,9 @@ async function sendConfirmationEmail(
 
   } catch (emailError: unknown) {
     console.error('Erro ao gerar PDF ou enviar e-mail:', emailError);
+    await sendDiscordAlert(
+      `Falha ao gerar o comprovante ou enviar o e-mail do pedido #${order.id}.`,
+      emailError
+    );
   }
 }
