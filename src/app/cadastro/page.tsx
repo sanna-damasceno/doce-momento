@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { aplicarMascaraWhatsApp } from '@/utils/mascaras';
+import { registrarEvento } from '@/utils/analytics';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -129,6 +130,9 @@ export default function RegisterPage() {
       const otpData = await otpResponse.json();
 
       if (otpResponse.ok) {
+        registrarEvento('enviou_formulario', {
+          tipo_formulario: 'cadastro',
+        });
         setFormData({
           ...formData,
           name,
@@ -153,22 +157,34 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
     setLoading(true);
+    console.log('1. Função de verificação iniciada');
 
     try {
       // 1. Validar o código OTP
+      console.log('2. Enviando código para a API');
       const verifyResponse = await fetch('/api/otp/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email, code: otpCode }),
       });
 
+      console.log('3. Status da API:', verifyResponse.status);
+
       const verifyData = await verifyResponse.json();
+      console.log('4. Resposta da API:', verifyData);
 
       if (!verifyResponse.ok) {
+        console.log('5. A API retornou erro');
         setError(verifyData.error || 'Código incorreto ou expirado.');
         setLoading(false);
         return;
       }
+
+      console.log('E-mail verificado com sucesso!');
+
+      registrarEvento('email_verificado');
+
+      console.log('Evento email_verificado enviado!');
 
       // 2. Criar a conta após a validação do e-mail
       const registerResponse = await fetch('/api/auth/register', {
@@ -343,7 +359,13 @@ export default function RegisterPage() {
                 </button>
               </form>
             ) : (
-              <form onSubmit={handleVerifyAndRegister} className="space-y-3">
+              <form
+                    onSubmit={(e) => {
+                      console.log('Formulário de verificação submetido');
+                      handleVerifyAndRegister(e);
+                    }}
+                    className="space-y-3"
+                  >
                 <div>
                   <label className="block text-[11px] font-medium text-gray-700 mb-1">
                     Código de Verificação (6 dígitos) *

@@ -2,7 +2,7 @@ import Image from 'next/image';
 import { Pool } from 'pg';
 import { notFound } from 'next/navigation';
 import BotaoComprarModal from './BotaoComprarModal';
-
+import RegistrarVisualizacaoProduto from './RegistrarVisualizacaoProduto';
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -36,6 +36,14 @@ export default async function DetalheProdutoPage({ params }: PageProps) {
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] flex flex-col justify-between font-sans text-[#3D2C1E]">
+    
+      <RegistrarVisualizacaoProduto
+        produtoId={produto.id}
+        nomeProduto={produto.nome}
+        categoria={produto.categoria}
+        preco={Number(produto.preco)}
+      />
+
 
       {/* Conteúdo do Produto */}
       <main className="max-w-6xl mx-auto px-4 py-10 w-full flex-grow">

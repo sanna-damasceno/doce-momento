@@ -22,6 +22,7 @@ interface OrderRequest {
   items: OrderItem[];
   notes?: string;
   payment_type: string;
+  ga_client_id?: string | null;
 }
 
 const client = new MercadoPagoConfig({
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
       items,
       notes,
       payment_type,
+      ga_client_id,
     } = body;
 
     // 2. Verificar autenticação
@@ -332,10 +334,11 @@ export async function POST(request: Request) {
         notes,
         status,
         payment_status,
-        payment_type
+        payment_type,
+        ga_client_id
       )
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-        'Pendente', 'pendente', $11)
+        'Pendente', 'pendente', $11, $12)
       RETURNING id`,
       [
         customer_name.trim(),
@@ -349,6 +352,9 @@ export async function POST(request: Request) {
         totalAmount,
         notes?.trim() || '',
         payment_type,
+        typeof ga_client_id === 'string' && ga_client_id.length <= 100
+          ? ga_client_id
+          : null,
       ]
     );
 

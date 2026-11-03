@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { aplicarMascaraWhatsApp } from '@/utils/mascaras';
+import { registrarEvento, obterClientId } from '@/utils/analytics';
 
 
 interface ItemCarrinho {
@@ -37,6 +38,7 @@ export default function CheckoutPage() {
   const [itens, setItens] = useState<ItemCarrinho[]>([]);
   const [loadingCart, setLoadingCart] = useState(true);
   const [loading, setLoading] = useState(false);
+  const eventoCheckoutRegistrado = useRef(false);
 
   // Estado para os dados de entrega e pagamento
   const [formData, setFormData] = useState({
@@ -93,6 +95,17 @@ export default function CheckoutPage() {
           if (dataCart.itens.length === 0) {
             router.push('/carrinho');
             return;
+          }
+          // Registra o início do checkout apenas uma vez
+          if (!eventoCheckoutRegistrado.current) {
+            registrarEvento('iniciou_checkout', {
+              quantidade_itens: dataCart.itens.reduce(
+                (total: number, item: ItemCarrinho) => total + item.quantidade,
+                0
+              ),
+              currency: 'BRL',
+            });
+            eventoCheckoutRegistrado.current = true;
           }
         }
       } catch (error) {
@@ -169,6 +182,8 @@ export default function CheckoutPage() {
         }
       }));
 
+      const clientId = await obterClientId();
+
       const orderPayload = {
         customer_name: formData.customer_name,
         customer_email: formData.customer_email,
@@ -182,6 +197,7 @@ export default function CheckoutPage() {
         notes: formData.notes,
         payment_type: formData.payment_type,
         items: formattedItems,
+        ga_client_id: clientId,
       };
 
       const response = await fetch('/api/orders', {

@@ -30,6 +30,7 @@ type OrderEmailData = {
   payment_type: string | null;
   notes: string | null;
   created_at: string | Date;
+  ga_client_id: string | null;
 };
 
 type OrderItem = {
@@ -53,6 +54,71 @@ function isErrorWithDetails(
 const client = new MercadoPagoConfig({
   accessToken: process.env.MP_ACCESS_TOKEN || '',
 });
+
+
+async function enviarEventoCompraGA4(
+  clientId: string | null,
+  orderId: number,
+  total: number,
+  items: {
+    product_name: string;
+    quantity: number;
+    unit_price: number;
+  }[]
+) {
+  const measurementId = process.env.NEXT_PUBLIC_GA_ID;
+  const apiSecret = process.env.GA4_API_SECRET;
+
+  if (!clientId) {
+    console.warn(
+      'Compra não enviada ao GA4: client_id não encontrado.'
+    );
+    return;
+  }
+
+  if (!measurementId || !apiSecret) {
+    console.error('Configurações do GA4 não encontradas.');
+    return;
+  }
+
+  const response = await fetch(
+    `https://www.google-analytics.com/mp/collect?measurement_id=${measurementId}&api_secret=${apiSecret}`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        client_id: clientId,
+        events: [
+          {
+            name: 'compra_concluida',
+            params: {
+              transaction_id: String(orderId),
+              value: Number(total),
+              currency: 'BRL',
+              items: items.map((item) => ({
+                item_name: item.product_name,
+                price: Number(item.unit_price),
+                quantity: Number(item.quantity),
+              })),
+            },
+          },
+        ],
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      `Erro ao enviar compra ao GA4: ${response.status}`
+    );
+  }
+
+  console.log(
+    `Evento compra_concluida enviado ao GA4. Pedido: ${orderId}`
+  );
+}
 
 export async function POST(request: Request) {
   try {
@@ -201,7 +267,8 @@ export async function POST(request: Request) {
          payment_status,
          payment_type,
          notes,
-         created_at
+         created_at,
+         ga_client_id
        FROM orders
        WHERE id = $1`,
       [externalReference]
@@ -219,6 +286,25 @@ export async function POST(request: Request) {
        ORDER BY id`,
       [externalReference]
     );
+
+    // Enviar evento de compra concluída ao GA4
+    try {
+      await enviarEventoCompraGA4(
+        orderResult.rows[0].ga_client_id,
+        orderResult.rows[0].id,
+        Number(orderResult.rows[0].total_amount),
+        itemsResult.rows.map((item) => ({
+          product_name: item.product_name,
+          quantity: Number(item.quantity),
+          unit_price: Number(item.unit_price),
+        }))
+      );
+    } catch (gaError) {
+      console.error(
+        'Erro ao enviar evento de compra ao GA4:',
+        gaError
+      );
+    }
 
     await sendConfirmationEmail(
       orderResult.rows[0],

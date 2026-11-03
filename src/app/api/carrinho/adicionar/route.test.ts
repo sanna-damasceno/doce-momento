@@ -4,7 +4,7 @@
 
 import { POST } from './route';
 import { cookies } from 'next/headers';
-import { Pool } from 'pg';
+
 
 jest.mock('next/headers', () => ({
   cookies: jest.fn(),

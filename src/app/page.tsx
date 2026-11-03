@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { registrarEvento } from '@/utils/analytics';
 
 export default function Home() {
 
@@ -432,17 +433,17 @@ export default function Home() {
         </div>
       </section>
 
-
-
-
-      
-
-      {/* Botão Flutuante Direto para o WhatsApp da Empresa (RF12)[cite: 21] */}
+      {/* Botão Flutuante Direto para o WhatsApp da Empresa*/}
       <div className="fixed bottom-6 right-6 z-50">
-        <a 
+        <a
           href={`https://wa.me/5592993406975?text=${encodeURIComponent("Olá! Gostaria de saber mais sobre os produtos da Doce Momento.")}`}
-          target="_blank" 
+          target="_blank"
           rel="noopener noreferrer"
+          onClick={() => {
+            registrarEvento('clicou_whatsapp', {
+              local_botao: 'flutuante',
+            });
+          }}
           className="flex items-center gap-2 bg-green-600 text-white px-5 py-3 rounded-full shadow-lg font-medium text-sm hover:bg-green-700 transition transform hover:scale-105"
         >
           <span className="text-lg">💬</span>
